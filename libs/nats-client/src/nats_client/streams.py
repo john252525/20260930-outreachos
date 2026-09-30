@@ -25,11 +25,16 @@ STREAMS: list[StreamConfig] = [
         subjects=[
             "brief.>",
             "icp.>",
-            "contacts.>",
             "message.>",
             "reply.>",
             "experiment.>",
         ],
+        max_age_seconds=365 * 24 * 3600,
+        max_bytes=512 * 1024 * 1024,
+    ),
+    StreamConfig(
+        name="CONTACTS",
+        subjects=["company.>", "contact.>", "contacts.>"],
         max_age_seconds=365 * 24 * 3600,
         max_bytes=512 * 1024 * 1024,
     ),

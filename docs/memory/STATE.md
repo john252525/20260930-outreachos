@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-09-30 (iter 001)
+> Последнее обновление: 2026-09-30 (iter 002)
 
 ## Сделано (Done)
 
@@ -35,6 +35,16 @@
 - Langfuse подключён и работает: трейсы доходят, model/usage/cost совпадают с БД. Проверка — `docs/reference/langfuse.md`.
 - Миграция `0002_llm_call_tokens` (cache hit/miss, is_peak).
 
+### Спринт 2A — contact-store ✅
+- **services/contact-store**: единый источник правды по компаниям и контактам.
+  - Таблицы: `companies`, `contacts`, `contact_emails`, `contact_phones`, `stoplist_entries` (RLS + FORCE на всех).
+  - Fingerprint-дедуп (чистые функции): INN→domain→name (компании), email→phone→name+domain (контакты).
+  - Merger: evidence по confidence, история аккумулируется, primary пересчитывается.
+  - StopList: global (tenant_id NULL) + tenant-скоупный; блокирует создание контакта (409).
+  - API: `POST/GET /companies`, `/companies/bulk`, `POST/GET /contacts`, `/contacts/bulk`, `/contacts/{id}/status`, `POST/GET/DELETE /stoplist`.
+  - События: `company.created/updated/merged`, `contact.created/updated/merged/unsubscribed` (стрим `CONTACTS`).
+- NATS: добавлен стрим `CONTACTS`, лимиты подняты (`max_file_store 8GB` через `infra/nats/nats-server.conf`).
+
 ### Memory layer ✅
 - `AGENTS.md` (bootloader), `docs/memory/*` (PROJECT, STATE, DECISIONS, CONVENTIONS, GLOSSARY, BACKLOG),
   `docs/reference/pricing.md`, `docs/reference/scoring.md`, журнал `docs/memory/iterations/`.
@@ -57,6 +67,7 @@
 | tenant-service | 48100 | 8000 |
 | llm-gateway | 48101 | 8000 |
 | brief-service | 48102 | 8000 |
+| contact-store | 48103 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |
 | NATS monitor | 48220 | 8222 |

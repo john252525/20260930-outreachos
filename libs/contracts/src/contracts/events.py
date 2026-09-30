@@ -105,6 +105,56 @@ class ContactsEnrichedPayload(BaseModel):
     contact_ids: list[UUID] = Field(default_factory=list)
 
 
+class CompanySnapshot(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: UUID
+    fingerprint: str = ""
+    status: str = ""
+
+
+class CompanyCreatedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    company: CompanySnapshot
+
+
+class CompanyUpdatedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    company: CompanySnapshot
+
+
+class CompanyMergedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    company: CompanySnapshot
+
+
+class ContactSnapshot(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: UUID
+    fingerprint: str = ""
+    status: str = ""
+    company_id: UUID | None = None
+
+
+class ContactCreatedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    contact: ContactSnapshot
+
+
+class ContactUpdatedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    contact: ContactSnapshot
+
+
+class ContactMergedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    contact: ContactSnapshot
+
+
+class ContactUnsubscribedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    contact: ContactSnapshot
+
+
 class MessageSnapshot(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: UUID
@@ -219,6 +269,13 @@ EVENT_PAYLOAD_MAP: dict[str, type[BaseModel]] = {
     "brief.completed": BriefCompletedPayload,
     "icp.generated": ICPGeneratedPayload,
     "icp.revised": ICPRevisedPayload,
+    "company.created": CompanyCreatedPayload,
+    "company.updated": CompanyUpdatedPayload,
+    "company.merged": CompanyMergedPayload,
+    "contact.created": ContactCreatedPayload,
+    "contact.updated": ContactUpdatedPayload,
+    "contact.merged": ContactMergedPayload,
+    "contact.unsubscribed": ContactUnsubscribedPayload,
     "contacts.search_started": ContactsSearchStartedPayload,
     "contacts.found": ContactsFoundPayload,
     "contacts.enriched": ContactsEnrichedPayload,

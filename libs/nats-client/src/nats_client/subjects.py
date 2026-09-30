@@ -21,6 +21,15 @@ class Subjects(StrEnum):
     CONTACTS_FOUND = "contacts.found"
     CONTACTS_ENRICHED = "contacts.enriched"
 
+    COMPANY_CREATED = "company.created"
+    COMPANY_UPDATED = "company.updated"
+    COMPANY_MERGED = "company.merged"
+
+    CONTACT_CREATED = "contact.created"
+    CONTACT_UPDATED = "contact.updated"
+    CONTACT_MERGED = "contact.merged"
+    CONTACT_UNSUBSCRIBED = "contact.unsubscribed"
+
     MESSAGE_DRAFTED = "message.drafted"
     MESSAGE_APPROVED = "message.approved"
     MESSAGE_REJECTED = "message.rejected"
@@ -52,7 +61,9 @@ SUBJECT_TO_STREAM: dict[str, str] = {
     "tenant": "TENANTS",
     "brief": "BRIEFS",
     "icp": "BRIEFS",
-    "contacts": "BRIEFS",
+    "contacts": "CONTACTS",
+    "company": "CONTACTS",
+    "contact": "CONTACTS",
     "message": "BRIEFS",
     "reply": "BRIEFS",
     "experiment": "BRIEFS",

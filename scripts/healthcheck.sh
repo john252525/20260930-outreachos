@@ -18,5 +18,6 @@ check() {
 check "tenant-service" "http://127.0.0.1:${TENANT_SERVICE_PORT}/healthz"
 check "llm-gateway"    "http://127.0.0.1:${LLM_GATEWAY_PORT}/healthz"
 check "brief-service"  "http://127.0.0.1:${BRIEF_SERVICE_PORT}/healthz"
+check "contact-store"  "http://127.0.0.1:${CONTACT_STORE_PORT}/healthz"
 check "nats-monitor"   "http://127.0.0.1:${NATS_MONITOR_PORT}/healthz"
 [[ $FAILED -eq 0 ]] || exit 1

@@ -37,9 +37,14 @@ services:
     image: nats:2.10.22-alpine
     container_name: outreach-os-nats
     restart: unless-stopped
-    command: ["-js", "-sd", "/data", "-m", "8222", "--user", "${NATS_USER}", "--pass", "${NATS_PASSWORD}"]
+    command: [
+      "-c", "/etc/nats/nats-server.conf",
+      "--user", "${NATS_USER}",
+      "--pass", "${NATS_PASSWORD}",
+    ]
     volumes:
       - nats_data:/data
+      - ./nats/nats-server.conf:/etc/nats/nats-server.conf:ro
     ports:
       - "127.0.0.1:${NATS_PORT}:4222"
       - "127.0.0.1:${NATS_MONITOR_PORT}:8222"
@@ -138,6 +143,30 @@ services:
       BRIEF_LLM_MODEL: ${BRIEF_LLM_MODEL:-deepseek-flash}
     ports:
       - "0.0.0.0:${BRIEF_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  contact-store:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/contact-store/Dockerfile
+    container_name: outreach-os-contact-store
+    environment:
+      SERVICE_NAME: contact-store
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/3
+      CONTACT_STORE_FUZZY_MATCH: "false"
+      CONTACT_STORE_GLOBAL_STOPLIST: "true"
+    ports:
+      - "0.0.0.0:${CONTACT_STORE_PORT}:8000"
     depends_on:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}
