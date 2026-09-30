@@ -1,0 +1,23 @@
+"""Dev-console settings.
+
+The console is a read-mostly inspector for the dev environment. It proxies
+requests to the other services and reads NATS events. It does not touch the
+database directly.
+"""
+
+from pydantic import Field
+
+from common.config import BaseServiceSettings
+
+
+class Settings(BaseServiceSettings):
+    service_name: str = Field(default="dev-console", alias="SERVICE_NAME")
+
+    tenant_service_url: str = Field(
+        default="http://tenant-service:8000", alias="TENANT_SERVICE_URL"
+    )
+    brief_service_url: str = Field(default="http://brief-service:8000", alias="BRIEF_SERVICE_URL")
+    llm_gateway_url: str = Field(default="http://llm-gateway:8000", alias="LLM_GATEWAY_URL")
+    contact_store_url: str = Field(default="http://contact-store:8000", alias="CONTACT_STORE_URL")
+
+    events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")

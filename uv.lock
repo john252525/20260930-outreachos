@@ -13,6 +13,7 @@ members = [
     "contact-store",
     "contracts",
     "db",
+    "dev-console",
     "llm-client",
     "llm-gateway",
     "nats-client",
@@ -599,6 +600,33 @@ requires-dist = [
     { name = "common", editable = "libs/common" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.36" },
     { name = "uuid6", specifier = ">=2024.7.10" },
+]
+
+[[package]]
+name = "dev-console"
+version = "0.1.0"
+source = { editable = "services/dev-console" }
+dependencies = [
+    { name = "common" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "nats-client" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "structlog" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "common", editable = "libs/common" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "nats-client", editable = "libs/nats-client" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pydantic-settings", specifier = ">=2.6" },
+    { name = "structlog", specifier = ">=24.4" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 
 [[package]]

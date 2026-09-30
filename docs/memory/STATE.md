@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-09-30 (iter 002)
+> Последнее обновление: 2026-09-30 (iter 003)
 
 ## Сделано (Done)
 
@@ -45,6 +45,10 @@
   - События: `company.created/updated/merged`, `contact.created/updated/merged/unsubscribed` (стрим `CONTACTS`).
 - NATS: добавлен стрим `CONTACTS`, лимиты подняты (`max_file_store 8GB` через `infra/nats/nats-server.conf`).
 
+### Dev-console ✅
+- `services/dev-console` — внутренний инспектор (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы компаний/контактов/брифов/stop-list. Проксирует API и читает JetStream (read-only). Одна HTML-страница, без npm.
+- UI: `http://<host>:48110/`, OpenAPI: `/docs`, эндпоинты `/api/*`.
+
 ### Memory layer ✅
 - `AGENTS.md` (bootloader), `docs/memory/*` (PROJECT, STATE, DECISIONS, CONVENTIONS, GLOSSARY, BACKLOG),
   `docs/reference/pricing.md`, `docs/reference/scoring.md`, журнал `docs/memory/iterations/`.
@@ -68,6 +72,7 @@
 | llm-gateway | 48101 | 8000 |
 | brief-service | 48102 | 8000 |
 | contact-store | 48103 | 8000 |
+| dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |
 | NATS monitor | 48220 | 8222 |
