@@ -15,6 +15,8 @@
 
 **Спринт 0 закрыт:** инфра (Postgres / NATS JetStream / Redis), библиотеки `common` / `contracts` / `db` / `nats-client` / `llm-client`, сервисы `tenant-service` и `llm-gateway`.
 
+**Спринт 2A закрыт:** добавлен `contact-store` — единый источник правды по компаниям и контактам (upsert/дедуп/merge, stop-list, события).
+
 **Спринт 1 закрыт:** добавлен `brief-service` — адаптивный intake (сырой ввод → структурированный Brief v1 → уточняющие вопросы через LLM). Проверено: intake, ответы на вопросы, смена статусов (complete/abandon/reset/archive), события `brief.created/questions_asked/updated/completed`, RLS, идемпотентность, учёт LLM-вызовов.
 
 ## Быстрый старт
@@ -42,6 +44,11 @@
     curl -X POST http://127.0.0.1:48102/briefs \
       -H "Content-Type: application/json" -H "X-Tenant-ID: <tenant-id>" \
       -d '{"text":"Гидроборты для грузовиков, ищем дистрибьюторов"}'
+
+    # создать компанию (contact-store)
+    curl -X POST http://127.0.0.1:48103/companies \
+      -H "Content-Type: application/json" -H "X-Tenant-ID: <tenant-id>" \
+      -d '{"payload":{"name":{"value":"ООО Ромашка","confidence":1.0,"evidence":[]},"domain":{"value":"romashka.ru","confidence":1.0,"evidence":[]}}}'
 
     # вызвать LLM-шлюз (dev: провайдер mock)
     curl -X POST http://127.0.0.1:48101/v1/complete \

@@ -27,7 +27,7 @@
 | `brief-service` | 1 ✅ | Приём вводных, уточняющие вопросы, Brief v1 |
 | `icp-service` | 2 | Построение ICP/сегментов |
 | `sourcing-service` | 2 | OSINT-поиск компаний и контактов |
-| `contact-store` | 2 | Единая база компаний/контактов |
+| `contact-store` | 2A ✅ | Единая база компаний/контактов |
 | `composer-service` | 3 | Генерация сообщений |
 | `review-queue` | 3 | Human-in-the-loop очередь |
 | `sender-email` | 4 | Отправка email с rate-limit и ramp-up |
