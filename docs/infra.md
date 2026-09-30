@@ -659,8 +659,8 @@ authorization {
 # JetStream
 jetstream {
   store_dir: "/data/jetstream"
-  max_memory_store: 256MB
-  max_file_store: 10GB
+  max_memory_store: 512MB
+  max_file_store: 8GB
   # Для dev — одна нода, без репликации
 }
 
@@ -692,8 +692,8 @@ write_deadline: "10s"
 
 jetstream {
   store_dir: "/data/jetstream"
-  max_memory_store: 256MB
-  max_file_store: 10GB
+  max_memory_store: 512MB
+  max_file_store: 8GB
 }
 ```
 

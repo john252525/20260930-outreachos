@@ -75,3 +75,20 @@
 **Контекст:** агент stateless, контекст обнуляется, нужно быстро восстанавливать «где мы».
 **Решение:** три горизонта памяти — Cold (PROJECT/DECISIONS/CONVENTIONS), Warm (STATE/BACKLOG), Hot/append-only (iterations/). `AGENTS.md` — точка входа.
 **Последствия:** STATE.md — единственный источник «где мы»; в конце итерации обязательное обновление.
+
+## ADR-012: Явный лимит хранилища JetStream
+
+**Контекст:** NATS JetStream бронирует место не по факту данных, а по сумме `max_bytes`
+всех стримов (`reserved_storage`). У нас 5 стримов с потолками 256-512 MiB каждый →
+суммарно ~1.6 GiB «брони». Дефолтный общий пул (`max_file_store`) был ~1.2 GiB, поэтому
+добавление стрима `CONTACTS` упало с `insufficient storage resources available`
+(при фактических данных < 1 MiB — это не проблема объёма, а проблема конфигурации).
+
+**Решение:** задать общий пул явно через конфиг-файл `infra/nats/nats-server.conf`:
+`max_file_store: 8GB`, `max_memory_store: 512MB`. Пробросить через `command: -c ...` в compose.
+
+**Последствия:**
+- Пул (8 GiB) ≫ сумма броней стримов (~1.6 GiB) — запас есть.
+- Флаги `--js-max-file-store`/`--js-max-memory` в CLI nats-server НЕ существуют — только конфиг-файл.
+- При добавлении новых стримов проверять: сумма их `max_bytes` не должна превышать `max_file_store`.
+- Мониторинг: `curl http://127.0.0.1:$NATS_MONITOR_PORT/jsz` → `reserved_storage` vs `config.max_storage`.
