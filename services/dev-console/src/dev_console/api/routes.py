@@ -23,9 +23,17 @@ async def services(request: Request) -> list[dict[str, Any]]:
 
 @router.get("/tenants")
 async def list_tenants(request: Request) -> Any:
-    proxy = request.app.state.proxy
-    status, body = await proxy.get("tenant-service", "/tenants")
-    return JSONResponse(content=body, status_code=status)
+    lister = request.app.state.tenant_lister
+    try:
+        tenants = await lister.list()
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=502)
+    for t in tenants:
+        if t.get("id") is not None:
+            t["id"] = str(t["id"])
+        if t.get("created_at") is not None:
+            t["created_at"] = t["created_at"].isoformat()
+    return tenants
 
 
 @router.post("/tenants")

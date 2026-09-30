@@ -21,3 +21,7 @@ class Settings(BaseServiceSettings):
     contact_store_url: str = Field(default="http://contact-store:8000", alias="CONTACT_STORE_URL")
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
+
+    # Read-only DSN for listing all tenants (system-level, bypasses RLS).
+    # Dev-only: this is an inspector tool.
+    database_url_admin: str = Field(..., alias="DATABASE_URL_ADMIN")

@@ -607,6 +607,7 @@ name = "dev-console"
 version = "0.1.0"
 source = { editable = "services/dev-console" }
 dependencies = [
+    { name = "asyncpg" },
     { name = "common" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -619,6 +620,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "asyncpg", specifier = ">=0.30" },
     { name = "common", editable = "libs/common" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },

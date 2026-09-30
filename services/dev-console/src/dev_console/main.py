@@ -14,6 +14,7 @@ from dev_console.api.routes import router as api_router
 from dev_console.config import Settings
 from dev_console.nats_viewer import NATSViewer
 from dev_console.proxy import ServiceProxy
+from dev_console.tenants_db import TenantLister
 
 logger = structlog.get_logger()
 
@@ -35,7 +36,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     nc = await nats.connect(settings.nats_url, name=settings.service_name)
 
+    tenant_lister = TenantLister(settings.database_url_admin)
+    await tenant_lister.connect()
+
     app.state.settings = settings
+    app.state.tenant_lister = tenant_lister
     app.state.proxy = proxy
     app.state.viewer = NATSViewer(nc)
 
@@ -43,6 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        await tenant_lister.close()
         await nc.close()
         await proxy.close()
         logger.info("service_stopped")
