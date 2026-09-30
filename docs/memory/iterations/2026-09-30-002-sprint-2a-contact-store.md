@@ -22,7 +22,7 @@ Commit: (pending)
 
 - `StopListEntry.tenant_id` — nullable (глобальные записи), объявлен вручную без TenantMixin.
 - unique-индекс stoplist через COALESCE(NULL) — Postgres игнорирует NULL в уникальных индексах.
-- NATS: дефолтный лимит хранилища 1.2GB исчерпан → конфиг-файл с 8GB.
+- NATS: ошибка insufficient storage resources available при создании стрима CONTACTS. Причина: JetStream бронирует место по сумме max_bytes стримов (~1.6 GiB), а дефолтный общий пул был ~1.2 GiB; фактических данных при этом < 1 MiB (проблема конфигурации, не объёма). Флагов --js-max-file-store у nats-server нет - вынес infra/nats/nats-server.conf с max_file_store 8GB, пробросил через command: -c. См. ADR-012.
 - `company_id` из payload приходит строкой → приводим к UUID.
 - RLS-политики null-safe (`NULLIF(current_setting(...), '')::uuid`) и FORCE на всех таблицах.
 
