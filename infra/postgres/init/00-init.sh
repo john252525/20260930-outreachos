@@ -1,0 +1,24 @@
+#!/bin/bash
+# Runs once on first Postgres init. Creates a non-privileged app role
+# (RLS applies to it) and grants privileges.
+set -e
+
+APP_USER="${POSTGRES_APP_USER:-outreach_app}"
+APP_PASSWORD="${POSTGRES_APP_PASSWORD:-change_me_app}"
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-SQL
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${APP_USER}') THEN
+        CREATE ROLE ${APP_USER} WITH LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD '${APP_PASSWORD}';
+      END IF;
+    END
+    \$\$;
+
+    GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${APP_USER};
+    GRANT USAGE ON SCHEMA public TO ${APP_USER};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${APP_USER};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO ${APP_USER};
+SQL
