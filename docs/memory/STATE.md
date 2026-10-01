@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-09-30 (iter 003)
+> Последнее обновление: 2026-10-01 (iter 004)
 
 ## Сделано (Done)
 
@@ -45,6 +45,16 @@
   - События: `company.created/updated/merged`, `contact.created/updated/merged/unsubscribed` (стрим `CONTACTS`).
 - NATS: добавлен стрим `CONTACTS`, лимиты подняты (`max_file_store 8GB` через `infra/nats/nats-server.conf`).
 
+### Спринт 2B — icp-service ✅
+- **services/icp-service**: Brief → ICP (сегменты) через LLM. Изолированный LLM-сервис.
+  - Таблица `icps` (payload JSONB, version, is_active, RLS+FORCE).
+  - `WeightNormalizer` — детерминированная нормализация весов (сумма 1.0, компенсация округления).
+  - `BriefClient` — HTTP к brief-service; `LLMClient` — к llm-gateway (retry на битый JSON, до 3 попыток).
+  - Версионирование: version=max+1, старая деактивируется; activate — откат.
+  - API: `POST /icps`, `GET /icps`, `GET /icps/{id}`, `GET /icps/active/by-brief/{brief_id}`, `POST /icps/{id}/revise|activate|deactivate`.
+  - События: `icp.generated`, `icp.revised` (стрим BRIEFS).
+- Dev-console: добавлена вкладка ICP + icp-service в health.
+
 ### Dev-console ✅
 - `services/dev-console` — внутренний инспектор (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы компаний/контактов/брифов/stop-list. Проксирует API и читает JetStream (read-only). Одна HTML-страница, без npm.
 - UI: `http://<host>:48110/`, OpenAPI: `/docs`, эндпоинты `/api/*`.
@@ -72,6 +82,7 @@
 | llm-gateway | 48101 | 8000 |
 | brief-service | 48102 | 8000 |
 | contact-store | 48103 | 8000 |
+| icp-service | 48104 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |

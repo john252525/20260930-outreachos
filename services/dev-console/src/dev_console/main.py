@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "brief-service": settings.brief_service_url,
             "llm-gateway": settings.llm_gateway_url,
             "contact-store": settings.contact_store_url,
+            "icp-service": settings.icp_service_url,
         }
     )
     nc = await nats.connect(settings.nats_url, name=settings.service_name)

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api", tags=["console"])
 
-SERVICE_NAMES = ["tenant-service", "brief-service", "llm-gateway", "contact-store"]
+SERVICE_NAMES = ["tenant-service", "brief-service", "llm-gateway", "contact-store", "icp-service"]
 
 
 @router.get("/services")
@@ -96,6 +96,19 @@ async def data_briefs(
     proxy = request.app.state.proxy
     status, body = await proxy.get(
         "brief-service", "/briefs", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/icps")
+async def data_icps(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "icp-service", "/icps", tenant_id=tenant, params={"limit": limit}
     )
     return JSONResponse(content=body, status_code=status)
 

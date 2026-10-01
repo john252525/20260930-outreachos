@@ -1,5 +1,6 @@
 """Read-only NATS JetStream inspector."""
 
+import contextlib
 import json
 import uuid
 from typing import Any
@@ -80,9 +81,7 @@ class NATSViewer:
                 if len(messages) >= limit:
                     break
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 await self._js.delete_consumer(stream, consumer)
-            except Exception:
-                pass
         messages.reverse()  # newest first
         return messages[:limit]

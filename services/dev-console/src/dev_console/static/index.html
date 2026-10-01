@@ -54,6 +54,7 @@
   <button data-tab="companies">Компании</button>
   <button data-tab="contacts">Контакты</button>
   <button data-tab="briefs">Брифы</button>
+  <button data-tab="icps">ICP</button>
   <button data-tab="stoplist">Stop-list</button>
 </nav>
 <main>
@@ -77,6 +78,7 @@
   <div id="companies" class="tab"><div id="companiesList"></div></div>
   <div id="contacts" class="tab"><div id="contactsList"></div></div>
   <div id="briefs" class="tab"><div id="briefsList"></div></div>
+  <div id="icps" class="tab"><div id="icpsList"></div></div>
   <div id="stoplist" class="tab"><div id="stoplistList"></div></div>
 </main>
 
@@ -173,6 +175,11 @@ const renderers = {
     ['id', r => shortId(r.id)], ['name', r => r.payload?.full_name?.value],
     ['email', r => r.primary_email || r.payload?.emails?.[0]?.value],
     ['position', r => r.payload?.position?.value], ['status', r => r.status],
+    ['created', r => dt(r.created_at)]]),
+  icps: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['brief', r => shortId(r.brief_id)],
+    ['ver', r => r.version], ['active', r => r.is_active ? '✓' : ''],
+    ['segments', r => r.segments_count], ['conf', r => r.llm_confidence],
     ['created', r => dt(r.created_at)]]),
   briefs: (rows) => table(rows, [
     ['id', r => shortId(r.id)], ['project', r => r.identity?.project_name],
