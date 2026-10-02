@@ -44,7 +44,7 @@ class SearchJobRead(BaseModel):
 
 
 class SearchJobSummary(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: UUID
     icp_id: UUID
     segment_id: str
