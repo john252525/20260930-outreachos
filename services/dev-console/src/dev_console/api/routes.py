@@ -15,6 +15,7 @@ SERVICE_NAMES = [
     "icp-service",
     "sourcing-service",
     "composer-service",
+    "review-queue",
 ]
 
 
@@ -104,6 +105,19 @@ async def data_briefs(
     proxy = request.app.state.proxy
     status, body = await proxy.get(
         "brief-service", "/briefs", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/review-items")
+async def data_review_items(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "review-queue", "/review-items", tenant_id=tenant, params={"status": "pending", "limit": limit}
     )
     return JSONResponse(content=body, status_code=status)
 

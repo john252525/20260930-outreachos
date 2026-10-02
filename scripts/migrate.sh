@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
 COMPOSE="docker compose -f infra/docker-compose.dev.yml --env-file .env"
-SERVICES=("tenant-service" "llm-gateway" "brief-service" "contact-store" "icp-service" "sourcing-service" "composer-service")
+SERVICES=("tenant-service" "llm-gateway" "brief-service" "contact-store" "icp-service" "sourcing-service" "composer-service" "review-queue")
 
 for svc in "${SERVICES[@]}"; do
   if [[ -d "services/${svc}/migrations" ]]; then

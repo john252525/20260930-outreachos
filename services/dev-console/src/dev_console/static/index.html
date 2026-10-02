@@ -57,6 +57,7 @@
   <button data-tab="icps">ICP</button>
   <button data-tab="searches">Поиски</button>
   <button data-tab="messages">Письма</button>
+  <button data-tab="review">Ревью</button>
   <button data-tab="stoplist">Stop-list</button>
 </nav>
 <main>
@@ -83,6 +84,7 @@
   <div id="icps" class="tab"><div id="icpsList"></div></div>
   <div id="searches" class="tab"><div id="searchesList"></div></div>
   <div id="messages" class="tab"><div id="messagesList"></div></div>
+  <div id="review" class="tab"><div id="reviewList"></div></div>
   <div id="stoplist" class="tab"><div id="stoplistList"></div></div>
 </main>
 
@@ -180,6 +182,9 @@ const renderers = {
     ['email', r => r.primary_email || r.payload?.emails?.[0]?.value],
     ['position', r => r.payload?.position?.value], ['status', r => r.status],
     ['created', r => dt(r.created_at)]]),
+  review: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['status', r => r.status], ['priority', r => r.priority],
+    ['subject', r => (r.snapshot||{}).subject], ['created', r => dt(r.created_at)]]),
   messages: (rows) => table(rows, [
     ['id', r => shortId(r.id)], ['status', r => r.status],
     ['subject', r => r.subject], ['words', r => r.word_count],

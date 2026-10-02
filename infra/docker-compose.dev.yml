@@ -194,6 +194,7 @@ services:
       ICP_SERVICE_URL: http://icp-service:8000
       SOURCING_SERVICE_URL: http://sourcing-service:8000
       COMPOSER_SERVICE_URL: http://composer-service:8000
+      REVIEW_QUEUE_URL: http://review-queue:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -286,6 +287,28 @@ services:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}
       redis: {condition: service_healthy}
+
+  review-queue:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/review-queue/Dockerfile
+    container_name: outreach-os-review-queue
+    environment:
+      SERVICE_NAME: review-queue
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/7
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+    ports:
+      - "0.0.0.0:${REVIEW_QUEUE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
 
 volumes:
   postgres_data: {name: outreach-os_postgres_data}

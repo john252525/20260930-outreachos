@@ -35,6 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "icp-service": settings.icp_service_url,
             "sourcing-service": settings.sourcing_service_url,
             "composer-service": settings.composer_service_url,
+            "review-queue": settings.review_queue_url,
         }
     )
     nc = await nats.connect(settings.nats_url, name=settings.service_name)

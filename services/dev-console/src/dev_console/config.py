@@ -26,6 +26,9 @@ class Settings(BaseServiceSettings):
     composer_service_url: str = Field(
         default="http://composer-service:8000", alias="COMPOSER_SERVICE_URL"
     )
+    review_queue_url: str = Field(
+        default="http://review-queue:8000", alias="REVIEW_QUEUE_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 
