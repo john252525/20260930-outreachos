@@ -20,6 +20,9 @@ class Settings(BaseServiceSettings):
     llm_gateway_url: str = Field(default="http://llm-gateway:8000", alias="LLM_GATEWAY_URL")
     contact_store_url: str = Field(default="http://contact-store:8000", alias="CONTACT_STORE_URL")
     icp_service_url: str = Field(default="http://icp-service:8000", alias="ICP_SERVICE_URL")
+    sourcing_service_url: str = Field(
+        default="http://sourcing-service:8000", alias="SOURCING_SERVICE_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 

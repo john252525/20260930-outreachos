@@ -29,6 +29,15 @@
 ## Известные нюансы
 - `deepseek-flash` — **reasoning-модель**. При малых `max_tokens` (например, 20) может вернуть пустой `content` (весь бюджет ушёл в reasoning). Для генеративных задач держать `max_tokens >= 512`. Если нужен короткий ответ — не полагаться на малый лимит.
 
+## Известные ограничения (dev-среда)
+- **Память на VPS впритык** (~3.7 ГБ всего, часто <1 ГБ свободно). При нагрузке Redis иногда даёт
+  `Timeout connecting to server` в IdempotencyMiddleware (транзиентно, ретрай проходит). Для stage/prod —
+  больше RAM и/или отдельный Redis.
+- **sourcing-service** без внешних ключей: доступен только `website_parser` (httpx+bs4). Serper/Yandex XML/
+  DaData/Hunter регистрируются, если заданы ключи. Playwright НЕ установлен (импорт-guard): если httpx вернул
+  мало текста — JS-рендеринга нет (см. `website_parser._render_with_playwright`).
+- **Scorer**: компоненты `industry/size/geo/pain/trigger/role` — эвристики (не LLM). Порог `SOURCING_MIN_SCORE` (0.5).
+
 ## Техдолг
 
 - `IdempotencyMiddleware` пересобирает response body — для стриминговых ответов не сработает (пока не критично).

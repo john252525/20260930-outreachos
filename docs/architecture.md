@@ -26,7 +26,7 @@
 | `llm-gateway` | 0 ✅ | Единая точка выхода в LLM, учёт токенов, кэш |
 | `brief-service` | 1 ✅ | Приём вводных, уточняющие вопросы, Brief v1 |
 | `icp-service` | 2B ✅ | Построение ICP/сегментов |
-| `sourcing-service` | 2 | OSINT-поиск компаний и контактов |
+| `sourcing-service` | 2C ✅ | OSINT-поиск компаний и контактов |
 | `contact-store` | 2A ✅ | Единая база компаний/контактов |
 | `composer-service` | 3 | Генерация сообщений |
 | `review-queue` | 3 | Human-in-the-loop очередь |

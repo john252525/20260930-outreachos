@@ -192,6 +192,7 @@ services:
       LLM_GATEWAY_URL: http://llm-gateway:8000
       CONTACT_STORE_URL: http://contact-store:8000
       ICP_SERVICE_URL: http://icp-service:8000
+      SOURCING_SERVICE_URL: http://sourcing-service:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -218,6 +219,40 @@ services:
       ICP_COMPLETENESS_THRESHOLD: "0.85"
     ports:
       - "0.0.0.0:${ICP_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  sourcing-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/sourcing-service/Dockerfile
+    container_name: outreach-os-sourcing-service
+    environment:
+      SERVICE_NAME: sourcing-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/5
+      ICP_SERVICE_URL: http://icp-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      LLM_GATEWAY_URL: http://llm-gateway:8000
+      SERPER_API_KEY: ${SERPER_API_KEY:-}
+      SERPER_BASE_URL: ${SERPER_BASE_URL:-https://google.serper.dev}
+      YANDEX_XML_USER: ${YANDEX_XML_USER:-}
+      YANDEX_XML_KEY: ${YANDEX_XML_KEY:-}
+      DADATA_API_KEY: ${DADATA_API_KEY:-}
+      DADATA_SECRET_KEY: ${DADATA_SECRET_KEY:-}
+      HUNTER_API_KEY: ${HUNTER_API_KEY:-}
+      SOURCING_LLM_MODEL: ${SOURCING_LLM_MODEL:-deepseek-flash}
+      SOURCING_MIN_SCORE: ${SOURCING_MIN_SCORE:-0.5}
+    ports:
+      - "0.0.0.0:${SOURCING_SERVICE_PORT}:8000"
     depends_on:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}

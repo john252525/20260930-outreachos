@@ -28,7 +28,7 @@ jobs:
     if: github.event_name == 'push'
     strategy:
       matrix:
-        service: [tenant-service, llm-gateway, brief-service, contact-store, icp-service, dev-console]
+        service: [tenant-service, llm-gateway, brief-service, contact-store, icp-service, sourcing-service, dev-console]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

@@ -55,6 +55,7 @@
   <button data-tab="contacts">Контакты</button>
   <button data-tab="briefs">Брифы</button>
   <button data-tab="icps">ICP</button>
+  <button data-tab="searches">Поиски</button>
   <button data-tab="stoplist">Stop-list</button>
 </nav>
 <main>
@@ -79,6 +80,7 @@
   <div id="contacts" class="tab"><div id="contactsList"></div></div>
   <div id="briefs" class="tab"><div id="briefsList"></div></div>
   <div id="icps" class="tab"><div id="icpsList"></div></div>
+  <div id="searches" class="tab"><div id="searchesList"></div></div>
   <div id="stoplist" class="tab"><div id="stoplistList"></div></div>
 </main>
 
@@ -175,6 +177,11 @@ const renderers = {
     ['id', r => shortId(r.id)], ['name', r => r.payload?.full_name?.value],
     ['email', r => r.primary_email || r.payload?.emails?.[0]?.value],
     ['position', r => r.payload?.position?.value], ['status', r => r.status],
+    ['created', r => dt(r.created_at)]]),
+  searches: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['status', r => r.status],
+    ['raw', r => r.candidates_raw_count], ['persisted', r => r.candidates_persisted_count],
+    ['cost', r => '$'+(r.total_cost_usd||0).toFixed(4)],
     ['created', r => dt(r.created_at)]]),
   icps: (rows) => table(rows, [
     ['id', r => shortId(r.id)], ['brief', r => shortId(r.brief_id)],

@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-01 (iter 004)
+> Последнее обновление: 2026-10-02 (iter 005)
 
 ## Сделано (Done)
 
@@ -55,6 +55,17 @@
   - События: `icp.generated`, `icp.revised` (стрим BRIEFS).
 - Dev-console: добавлена вкладка ICP + icp-service в health.
 
+### Спринт 2C — sourcing-service ✅
+- **services/sourcing-service**: оркестратор OSINT. ICP-сегмент → коннекторы → дедуп → LLM-нормализация → скоринг → persist в contact-store.
+  - Таблицы `search_jobs`, `search_job_items` (RLS+FORCE). Версионирование не нужно.
+  - Коннекторы: `serper`, `yandex_xml`, `website_parser` (httpx+bs4), `registry` (DaData-провайдер), `enricher` (Hunter-провайдер). Все — через `ConnectorRegistry`, rate-limited, дедуп по домену.
+  - `Normalizer` (LLM: RawCandidate → Company/Contacts, evidence), `Scorer` (детерминированный по scoring_weights).
+  - Версионирование промптов: `sourcing_normalize_candidate_v1`.
+  - Фоновые задачи: `asyncio.create_task` + running_tasks, timeout, cancel, retry-failed.
+  - API: `POST /searches`, `GET /searches`, `GET /searches/stats`, `GET /searches/{id}`, `POST /searches/{id}/cancel|retry-failed`.
+  - События: `contacts.search_started`, `contacts.found`, `contacts.enriched` (стрим CONTACTS).
+- Dev-console: вкладка «Поиски» + sourcing-service в health.
+
 ### Dev-console ✅
 - `services/dev-console` — внутренний инспектор (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы компаний/контактов/брифов/stop-list. Проксирует API и читает JetStream (read-only). Одна HTML-страница, без npm.
 - UI: `http://<host>:48110/`, OpenAPI: `/docs`, эндпоинты `/api/*`.
@@ -83,6 +94,7 @@
 | brief-service | 48102 | 8000 |
 | contact-store | 48103 | 8000 |
 | icp-service | 48104 | 8000 |
+| sourcing-service | 48105 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |
