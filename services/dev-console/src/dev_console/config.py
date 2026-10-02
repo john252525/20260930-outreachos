@@ -23,6 +23,9 @@ class Settings(BaseServiceSettings):
     sourcing_service_url: str = Field(
         default="http://sourcing-service:8000", alias="SOURCING_SERVICE_URL"
     )
+    composer_service_url: str = Field(
+        default="http://composer-service:8000", alias="COMPOSER_SERVICE_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 
