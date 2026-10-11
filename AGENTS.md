@@ -3,12 +3,24 @@
 Ты работаешь в монорепе **Outreach OS** (мульти-тенантная API-first платформа для outreach).
 Этот файл — bootloader. Читай его первым делом при старте сессии.
 
+## Быстрый старт (TL;DR)
+
+- **Статус:** Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты. Следующий — **Спринт 4** (analytics + reply-classifier + A/B).
+  Актуальное состояние — в `docs/memory/STATE.md`.
+- **Стек:** Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
+- **uv** лежит локально: `export PATH="$PWD/.tools:$PATH"`.
+- **Поднять/проверить:** `bash scripts/bootstrap.sh`, `bash scripts/healthcheck.sh`, `bash scripts/migrate.sh`.
+- **Проверки:** `uv run ruff check .` · `uv run mypy libs services` · `uv run pytest -q`.
+- **Инспектор:** dev-console на `http://<host>:48110/` (сервисы, события NATS, данные).
+- **Сервер общий** с чужими проектами — работай только в `/opt/20260930-outreachos`, порты свободные/рандомные,
+  чужие контейнеры НЕ трогай. Память/диск «впритык» → при таймауте сборки: `docker builder prune -f`.
+
 ## Порядок чтения при старте
 
-1. `docs/memory/PROJECT.md` — что за проект, архитектура, стек, интеграции
-2. `docs/memory/STATE.md` — где мы сейчас (Done / In progress / Next / Blockers)
-3. `docs/memory/CONVENTIONS.md` — как писать код в этом репо
-4. `docs/memory/DECISIONS.md` — принятые архитектурные решения (не предлагай отвергнутое)
+1. `docs/memory/PROJECT.md` — что за проект, пайплайн, стек, интеграции
+2. `docs/memory/STATE.md` — где мы сейчас (Done / In progress / Next / Blockers) + карта портов
+3. `docs/memory/CONVENTIONS.md` — как писать код (в т.ч. межсервисные паттерны)
+4. `docs/memory/DECISIONS.md` — принятые архитектурные решения (ADR-001..016; не предлагай отвергнутое)
 5. последние 2–3 файла из `docs/memory/iterations/`
 6. при необходимости — `docs/memory/GLOSSARY.md`, `docs/memory/BACKLOG.md`
 
@@ -33,3 +45,15 @@
 4. Если было архитектурное решение — добавь ADR в `docs/memory/DECISIONS.md`
 5. Если появился TODO/долг — добавь в `docs/memory/BACKLOG.md`
 6. `git add -A && git commit -m "iter NNN: <summary>"`
+7. `git push` (origin — `git@github.com:john252525/20260930-outreachos.git`)
+
+## Шаблон файла итерации
+
+    # Iteration NNN — <короткое название>
+    Дата: YYYY-MM-DD
+    Коммит: <sha>
+    ## Цель
+    ## Изменения
+    ## Исправления (баги)
+    ## Тесты
+    ## Заметки / дальше

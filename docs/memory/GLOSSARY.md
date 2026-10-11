@@ -43,3 +43,20 @@
 - `complete` — достигнут порог полноты или форсированное завершение.
 - `abandoned` — отказ (с причиной в `metadata`).
 - `archived` — soft-delete.
+
+## Термины Спринта 2C/3 (sourcing, composer, review, sender)
+
+- **Connector** (коннектор) — абстракция источника в sourcing: `search(criteria) -> RawCandidate[]`. Коннектор только достаёт данные, не нормализует, не скорит, не пишет в БД.
+- **RawCandidate** — сырой результат коннектора (URL, title, snippet, domain, raw_payload). Дедуп между коннекторами по `dedup_key()` (домен → URL → title).
+- **SearchJob** — единица работы sourcing (таблица `search_jobs`): статус, прогресс, счётчики, стоимость. `SearchJobItem` — по одному кандидату.
+- **Normalizer** (sourcing) — LLM-превращение RawCandidate в структурированную Company/Contacts с evidence.
+- **Scorer** (sourcing) — детерминированная оценка соответствия ICP по `scoring_weights` сегмента (industry/size/geo/pain/trigger/role). Порог `SOURCING_MIN_SCORE`.
+- **Template** (composer) — Python-модуль, рендерящий промпт под канал (`email_cold_outreach_v1`, `email_followup_v1`). Версионируется (`template_id:version`).
+- **Personalizer** (composer) — LLM-генерация `{subject, body}` из `RenderedTemplate`.
+- **FactChecker** (composer) — детерминированная проверка фактических утверждений в письме (имена/компания/числа). Числа без источника → `is_hypothesis: true` (+ warning).
+- **factual_claims** — список утверждений письма с `evidence_url`/`confidence`/`is_hypothesis` (в `message.personalization`).
+- **ReviewItem** — запись очереди ревью (таблица `review_items`): `pending | approved | rejected | edited_and_approved | skipped`. `priority` = `high`, если есть warnings/hypotheses.
+- **Ramp-up / warm-up** — постепенный рост лимитов отправки нового ящика по дням (Redis-счётчики hourly/daily).
+- **SenderAccount / SendAttempt** — подключённый ящик (SMTP/IMAP, пароль зашифрован) и история попыток отправки.
+- **Dry-run** — режим sender: письмо не уходит, но попытка и событие логируются (`provider_message_id=dry-run-<id>`).
+- **List-Unsubscribe** — заголовок письма для отписки в один клик (требование Gmail/Yandex).

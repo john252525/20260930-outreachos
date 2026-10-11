@@ -1,7 +1,16 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-11 (iter 006-008)
+> Последнее обновление: 2026-10-11 (iter 009 — memory cleanup)
+
+## TL;DR для нового агента
+
+- Платформа **Outreach OS** — мульти-тенантный outreach из API-first микросервисов.
+- **Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты.** Следующий — **Спринт 4** (analytics + reply-classifier + A/B).
+- Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
+- Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
+- Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
+- Фронт-инспектор: `http://<host>:48110/` (dev-console).
 
 ## Сделано (Done)
 
@@ -14,94 +23,76 @@
 - **services/tenant-service**: CRUD тенантов, архивация, RLS, идемпотентность, события `tenant.*`.
 - **services/llm-gateway**: единая точка входа в LLM, провайдеры deepseek/mock, кэш (Redis),
   учёт вызовов (`llm_calls`), маршрутизация по модели, Langfuse (опционально).
-- **Мульти-тенантность с RLS**: непривилегированная роль `outreach_app` (NOSUPERUSER, NOBYPASSRLS),
+- **Мульти-тенантность с RLS**: роль `outreach_app` (NOSUPERUSER, NOBYPASSRLS),
   `FORCE ROW LEVEL SECURITY`, null-safe политики через `NULLIF(current_setting('app.tenant_id', true), '')::uuid`.
 
 ### Спринт 1 — brief-service ✅
-- **services/brief-service**: адаптивный intake → Brief v1.
-  - `POST /briefs` (raw input: text/urls/transcript), `GET /briefs`, `GET /briefs/{id}`,
-    `POST /briefs/{id}/answers`, `POST /briefs/{id}/complete`, `POST /briefs/{id}/abandon`,
-    `POST /briefs/{id}/reset-question`, `DELETE /briefs/{id}`.
-  - LLM-слой: клиент к llm-gateway, robust JSON-парсер, схемы валидации, версионируемые промпты
-    (`brief_extract_v1`, `brief_generate_questions_v1`).
-  - Детерминированный скоринг: completeness + missing_info (без LLM, веса в `scoring/constants.py`).
-  - `fetcher.py` — загрузка сайтов (без JS-рендеринга).
-  - События: `brief.created`, `brief.questions_asked`, `brief.updated`, `brief.completed`.
-  - Миграция `0001_create_briefs` (JSONB + GIN-индексы + RLS).
+- Адаптивный intake → Brief v1. Endpoints: `POST/GET /briefs`, `GET /briefs/{id}`,
+  `POST /briefs/{id}/answers|complete|abandon|reset-question`, `DELETE /briefs/{id}`.
+- LLM-промпты `brief_extract_v1`, `brief_generate_questions_v1`; детерминированный completeness + missing_info.
+- События: `brief.created`, `brief.questions_asked`, `brief.updated`, `brief.completed`.
 
 ### LLM: deepseek-flash + pricing + Langfuse ✅
 - Модель по умолчанию — `deepseek-flash` (старые chat/reasoner удалены).
 - Единый слой цен `llm_gateway/pricing.py` (peak/off-peak, cache hit/miss).
-- Langfuse подключён и работает: трейсы доходят, model/usage/cost совпадают с БД. Проверка — `docs/reference/langfuse.md`.
-- Миграция `0002_llm_call_tokens` (cache hit/miss, is_peak).
+- Langfuse подключён: трейсы доходят, model/usage/cost совпадают с БД → `docs/reference/langfuse.md`.
 
 ### Спринт 2A — contact-store ✅
-- **services/contact-store**: единый источник правды по компаниям и контактам.
-  - Таблицы: `companies`, `contacts`, `contact_emails`, `contact_phones`, `stoplist_entries` (RLS + FORCE на всех).
-  - Fingerprint-дедуп (чистые функции): INN→domain→name (компании), email→phone→name+domain (контакты).
-  - Merger: evidence по confidence, история аккумулируется, primary пересчитывается.
-  - StopList: global (tenant_id NULL) + tenant-скоупный; блокирует создание контакта (409).
-  - API: `POST/GET /companies`, `/companies/bulk`, `POST/GET /contacts`, `/contacts/bulk`, `/contacts/{id}/status`, `POST/GET/DELETE /stoplist`.
-  - События: `company.created/updated/merged`, `contact.created/updated/merged/unsubscribed` (стрим `CONTACTS`).
-- NATS: добавлен стрим `CONTACTS`, лимиты подняты (`max_file_store 8GB` через `infra/nats/nats-server.conf`).
+- Таблицы `companies`, `contacts`, `contact_emails`, `contact_phones`, `stoplist_entries` (RLS + FORCE).
+- Fingerprint-дедуп (INN→domain→name; email→phone→name+domain), Merger (evidence по confidence),
+  StopList (global + tenant). API: companies/contacts CRUD + bulk + status, stoplist.
+- События: `company.*`, `contact.*` (стрим `CONTACTS`).
 
 ### Спринт 2B — icp-service ✅
-- **services/icp-service**: Brief → ICP (сегменты) через LLM. Изолированный LLM-сервис.
-  - Таблица `icps` (payload JSONB, version, is_active, RLS+FORCE).
-  - `WeightNormalizer` — детерминированная нормализация весов (сумма 1.0, компенсация округления).
-  - `BriefClient` — HTTP к brief-service; `LLMClient` — к llm-gateway (retry на битый JSON, до 3 попыток).
-  - Версионирование: version=max+1, старая деактивируется; activate — откат.
-  - API: `POST /icps`, `GET /icps`, `GET /icps/{id}`, `GET /icps/active/by-brief/{brief_id}`, `POST /icps/{id}/revise|activate|deactivate`.
-  - События: `icp.generated`, `icp.revised` (стрим BRIEFS).
-- Dev-console: добавлена вкладка ICP + icp-service в health.
+- Brief → ICP (сегменты) через LLM. Таблица `icps` (payload JSONB, version, is_active).
+- `WeightNormalizer` (сумма 1.0, компенсация округления). Версионирование + откат.
+- API: `POST/GET /icps`, `/icps/{id}`, `/icps/active/by-brief/{id}`, `POST /icps/{id}/revise|activate|deactivate`.
+- События: `icp.generated`, `icp.revised`.
 
 ### Спринт 2C — sourcing-service ✅
-- **services/sourcing-service**: оркестратор OSINT. ICP-сегмент → коннекторы → дедуп → LLM-нормализация → скоринг → persist в contact-store.
-  - Таблицы `search_jobs`, `search_job_items` (RLS+FORCE). Версионирование не нужно.
-  - Коннекторы: `serper`, `yandex_xml`, `website_parser` (httpx+bs4), `registry` (DaData-провайдер), `enricher` (Hunter-провайдер). Все — через `ConnectorRegistry`, rate-limited, дедуп по домену.
-  - `Normalizer` (LLM: RawCandidate → Company/Contacts, evidence), `Scorer` (детерминированный по scoring_weights).
-  - Версионирование промптов: `sourcing_normalize_candidate_v1`.
-  - Фоновые задачи: `asyncio.create_task` + running_tasks, timeout, cancel, retry-failed.
-  - API: `POST /searches`, `GET /searches`, `GET /searches/stats`, `GET /searches/{id}`, `POST /searches/{id}/cancel|retry-failed`.
-  - События: `contacts.search_started`, `contacts.found`, `contacts.enriched` (стрим CONTACTS).
-- Dev-console: вкладка «Поиски» + sourcing-service в health.
+- Оркестратор OSINT: ICP-сегмент → коннекторы → дедуп → LLM-нормализация → скоринг → contact-store.
+- Таблицы `search_jobs`, `search_job_items` (RLS+FORCE).
+- Коннекторы: `serper`, `yandex_xml`, `website_parser` (httpx+bs4), `registry` (DaData), `enricher` (Hunter).
+- API: `POST/GET /searches`, `/searches/stats`, `/searches/{id}`, `POST /searches/{id}/cancel|retry-failed`.
+- События: `contacts.search_started`, `contacts.found`, `contacts.enriched`.
 
 ### Спринт 3A — composer-service ✅
-- **services/composer-service**: генерация писем. TemplateRegistry (`email_cold_outreach_v1`, `email_followup_v1`),
-  Personalizer (LLM), FactChecker (детерминированный), evidence/factual_claims.
-  - Таблица `messages` (RLS+FORCE). Endpoints: `POST /messages`, `GET /messages`, `GET/PATCH /messages/{id}`.
-  - Событие `message.drafted`.
+- Генерация писем. TemplateRegistry (`email_cold_outreach_v1`, `email_followup_v1`),
+  Personalizer (LLM), FactChecker (детерминированный, evidence/factual_claims).
+- Таблица `messages` (RLS+FORCE). Endpoints: `POST /messages`, `GET /messages`, `GET/PATCH /messages/{id}`.
+- Событие `message.drafted`.
 
 ### Спринт 3B — review-queue ✅
-- **services/review-queue**: human-in-the-loop. Подписка на `message.drafted.*` (durable consumer) → ReviewItem.
-  - Endpoints: list, get, approve/reject/edit/assign, bulk-approve.
-  - События `message.approved`, `message.rejected`. Обновляет Message в composer через PATCH.
+- Human-in-the-loop. Подписка на `message.drafted.*` (durable consumer) → ReviewItem (priority high при warnings/hypotheses).
+- Endpoints: list, get, `approve/reject/edit/assign`, bulk-approve. Обновляет Message в composer через PATCH.
+- События `message.approved`, `message.rejected`.
 
 ### Спринт 3C — sender-email ✅
-- **services/sender-email**: отправка (dev: dry-run). SenderAccount (пароли шифруются Fernet), SendAttempt.
-  - SMTP-клиент (aiosmtplib), ramp-up/warm-up (Redis-счётчики), AccountSelector, stop-list проверка.
-  - Подписка на `message.approved.*` → dry-run/реальная отправка → `message.sent`.
-  - Endpoints: accounts CRUD, verify/pause/resume.
-  - `SENDER_ENCRYPTION_KEY` (Fernet), `SENDER_DRY_RUN=true` на dev.
+- Отправка (dev: dry-run). `sender_accounts` (пароли шифруются Fernet), `send_attempts`.
+- SMTP-клиент (aiosmtplib), ramp-up/warm-up (Redis-счётчики), AccountSelector, stop-list, List-Unsubscribe.
+- Подписка на `message.approved.*` → отправка → `message.sent`.
+- Endpoints: accounts CRUD + `verify|pause|resume`.
 
 ### Dev-console ✅
-- `services/dev-console` — внутренний инспектор (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы компаний/контактов/брифов/stop-list. Проксирует API и читает JetStream (read-only). Одна HTML-страница, без npm.
-- UI: `http://<host>:48110/`, OpenAPI: `/docs`, эндпоинты `/api/*`.
+- `services/dev-console` (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы
+  компаний/контактов/брифов/ICP/поисков/писем/ревью/stop-list. Проксирует API + читает JetStream (read-only).
+- UI: `http://<host>:48110/`. Тенант-лист — через read-only admin-DSN (RLS это требует).
 
 ### Memory layer ✅
-- `AGENTS.md` (bootloader), `docs/memory/*` (PROJECT, STATE, DECISIONS, CONVENTIONS, GLOSSARY, BACKLOG),
-  `docs/reference/pricing.md`, `docs/reference/scoring.md`, журнал `docs/memory/iterations/`.
+- `AGENTS.md` (bootloader) + `docs/memory/*` + `docs/reference/*` + `docs/memory/iterations/`.
 
 ## В работе (In progress)
-- (нет — всё запланированное на iter 001 закрыто)
+- (нет)
 
 ## Далее (Next)
-- **Спринт 2**: `icp-service` (Brief → ICP с сегментами), `sourcing-service` (OSINT), `contact-store`.
-- Заполнить ключи Langfuse и проверить трейсы.
-- Проверить/завести stage и prod окружения.
+- **Спринт 4**: `analytics-service` (метрики, reply rate, bounce rate), `reply-classifier` (классификация входящих через LLM), A/B-движок (Experiment как first-class).
+- **Спринт 5**: `cost-tracker` (учёт расходов по тенантам).
+- Позже: Telegram/WhatsApp sender (3D), LinkedIn (3E), зарубежные OSINT-источники (2D), stage/prod окружения.
 
 ## Блокеры
-- Нет (на момент обновления).
+- Нет на момент обновления.
+- **Внимание (dev-среда):** VPS с памятью/диском «впритык» (~3.7 ГБ RAM, диск часто >80%). Сборка образов
+  иногда таймаутит — помогает `docker builder prune -f`. Чужие контейнеры на сервере НЕ трогать.
 
 ## Карта портов (dev)
 
@@ -124,8 +115,19 @@
 
 ## Как поднять/проверить (dev)
 
+    export PATH="$PWD/.tools:$PATH"   # локальный uv
     bash scripts/bootstrap.sh          # с нуля
     bash scripts/healthcheck.sh        # проверить все сервисы
     bash scripts/migrate.sh            # применить миграции
     uv run pytest -q                   # unit-тесты
     uv run pytest -m integration -q    # интеграционные (нужен запущенный стек)
+
+## Полезные факты для быстрого старта
+
+- **Все LLM-вызовы — только через `llm-gateway`** (`POST /v1/complete`), не напрямую в DeepSeek.
+- **Сервисы не ходят друг к другу в БД** — только HTTP + NATS.
+- **Device-режимы:** `SENDER_DRY_RUN=true` (письма не уходят реально), `SENDER_ENCRYPTION_KEY` (Fernet) обязателен.
+- **Внешние ключи (dev):** DeepSeek и Langfuse заданы; Serper/Yandex/DaData/Hunter — пустые (sourcing работает
+  только через `website_parser`).
+- **Тесты:** unit — без внешних зависимостей; integration (`-m integration`) требуют запущенного стека и делают
+  реальные LLM-вызовы (медленно).

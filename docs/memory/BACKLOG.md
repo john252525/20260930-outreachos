@@ -1,52 +1,49 @@
 # BACKLOG.md — TODO, техдолг, отложенное
 
-> Чтобы агент не «чинил» то, что сознательно отложено.
+> Чтобы агент не «чинил» то, что сознательно отложено, и видел известные ограничения.
 
-## Известные ограничения (осознанные)
+## Осознанные ограничения (dev)
 
-- `brief-service` в dev работает с `BRIEF_LLM_MODEL=mock` — реальные LLM-вызовы не проверены в dev.
-- `llm-gateway` в dev: `DEFAULT_PROVIDER=mock` (проверка пайплайна без токенов).
-- Langfuse — подключён кодом (опционально), но требует ключей в `.env`.
-- `fetcher.py` не рендерит JS (только статический HTML).
-- Тесты интеграционные (`-m integration`) требуют запущенного стека; в CI пока не гоняются.
+- **`SENDER_DRY_RUN=true`** на dev: sender-email НЕ отправляет реально, только логирует и пишет SendAttempt
+  (`provider_message_id=dry-run-<id>`). Реальная отправка — явный флаг + подключённые ящики через API.
+- **Нет внешних ключей OSINT** (Serper/Yandex/DaData/Hunter): в sourcing реально работает только
+  `website_parser` (httpx+bs4). Остальные коннекторы регистрируются, если заданы ключи.
+- **Playwright НЕ установлен** (импорт-guard): `website_parser` без JS-рендеринга. Если httpx вернул мало
+  текста — fallback молча ничего не делает (`_render_with_playwright`).
+- **`deepseek-flash` — reasoning-модель.** При малых `max_tokens` (например, 20) может вернуть пустой
+  `content` (бюджет ушёл в reasoning). Для генеративных задач держать `max_tokens >= 512` (в composer — 2048, в icp — 16384).
+- **Scorer (sourcing)** — эвристики, не LLM. Порог `SOURCING_MIN_SCORE` (по умолчанию 0.5).
+- **Fuzzy-match компаний** — не делаем (только детерминированный дедуп в contact-store).
 
-## Известные нюансы
+## Инфраструктурные нюансы
+
 - **NATS JetStream лимиты:** `reserved_storage` = сумма `max_bytes` всех стримов, а не фактический объём.
-  Сейчас пул `max_file_store: 8GB` (см. `infra/nats/nats-server.conf`, ADR-012), брони ~1.6 GiB.
-  Перед добавлением нового стрима сверять сумму лимитов с пулом. Потолки стримов (256-512 MiB) на dev
-  завышены — при желании можно ужать до 64-128 MiB, но фактических данных < 1 MiB, смысла мало.
-
-## Отложено (Next / Later)
-
-- Стандартизировать расчёт стоимости LLM: вынести цены в отдельный конфиг (сделано/в работе, см. reference/pricing.md).
-- Stage и prod окружения (сейчас только dev).
-- Prometheus + Grafana (метрики), Loki (логи) — Спринт 4+.
-- `cost-tracker` сервис (учёт расходов по тенантам) — Спринт 5.
-- Backup Postgres для stage/prod.
-- SOPS + age для секретов stage/prod.
-- `docs/contracts.md` синхронизировать с фактической реализацией (например, `BriefStatus += archived`).
-
-## Известные нюансы
-- `deepseek-flash` — **reasoning-модель**. При малых `max_tokens` (например, 20) может вернуть пустой `content` (весь бюджет ушёл в reasoning). Для генеративных задач держать `max_tokens >= 512`. Если нужен короткий ответ — не полагаться на малый лимит.
-
-## Известные ограничения (dev-среда)
-- **Память на VPS впритык** (~3.7 ГБ всего, часто <1 ГБ свободно). При нагрузке Redis иногда даёт
-  `Timeout connecting to server` в IdempotencyMiddleware (транзиентно, ретрай проходит). Для stage/prod —
-  больше RAM и/или отдельный Redis.
-- **sourcing-service** без внешних ключей: доступен только `website_parser` (httpx+bs4). Serper/Yandex XML/
-  DaData/Hunter регистрируются, если заданы ключи. Playwright НЕ установлен (импорт-guard): если httpx вернул
-  мало текста — JS-рендеринга нет (см. `website_parser._render_with_playwright`).
-- **Scorer**: компоненты `industry/size/geo/pain/trigger/role` — эвристики (не LLM). Порог `SOURCING_MIN_SCORE` (0.5).
+  Пул `max_file_store: 8GB` (см. `infra/nats/nats-server.conf`, ADR-012). Перед новым стримом сверять сумму броней с пулом.
+- **VPS «впритык»:** ~3.7 ГБ RAM, диск часто >80%. Сборка образов иногда таймаутит → помогает `docker builder prune -f`.
+  Чужие контейнеры на сервере НЕ трогать. Redis при нехватке памяти иногда даёт `Timeout connecting to server`
+  в IdempotencyMiddleware (транзиентно).
+- **Stage/prod** ещё не заведены (только dev).
 
 ## Техдолг
 
-- `IdempotencyMiddleware` пересобирает response body — для стриминговых ответов не сработает (пока не критично).
-- `LLMRequest.raw` в провайдере не используется в учёте (можно логировать в LlmCall при необходимости).
-- В `replay` idempotency не сохраняется body для не-JSON ответов (сейчас ок).
+- `IdempotencyMiddleware` пересобирает response body — для стриминговых ответов не сработает.
+- `LLMRequest.raw` в провайдере не пишется в `llm_calls` (можно, если понадобится).
+- `docs/contracts.md` слегка расходится с реализацией (напр. `BriefStatus += archived`), при желании синхронизировать.
 - Нет автотестов на `fetcher.py` (требует сети).
+- `llm-gateway`: события `llm.called`/`cost.recorded` зарезервированы в `Subjects`, но пока не публикуются
+  (учёт идёт в таблицу `llm_calls`, cost-tracker — Спринт 5).
+
+## Отложено (Next / Later)
+
+- **Спринт 4:** `analytics-service` (метрики, reply rate, bounce rate, A/B), `reply-classifier` (классификация входящих), A/B-движок (Experiment first-class).
+- **Спринт 5:** `cost-tracker`.
+- **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
+- **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).
+- Stage/prod окружения, Prometheus+Grafana, Loki, backup Postgres, SOPS+age для секретов.
+- IMAP-poller в sender-email: код не реализован в 3C (только dry-run отправка). Reply/bounce detection — позже.
 
 ## Идеи (не обязательства)
 
 - `mock`-провайдер: расширить набор реалистичных ответов под будущие task_type.
-- A/B-движок: поднимать эксперименты как first-class (Experiment-контракт уже есть).
 - Мульти-канальность: email → telegram → whatsapp → linkedin.
+- Ротация ящиков по нагрузке в sender-email (сейчас AccountSelector берёт первый подходящий).

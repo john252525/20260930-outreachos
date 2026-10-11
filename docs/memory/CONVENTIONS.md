@@ -73,3 +73,20 @@ services/<name>/
 ## Коммиты
 
 - Сообщение: `iter NNN: <summary>` (см. `AGENTS.md`).
+
+## Межсервисные паттерны (Спринты 2C-3)
+
+- **Сервис не ходит в чужую БД** — только HTTP + NATS. Клиенты к другим сервисам — в `clients/` (httpx).
+- **`contact-store` entity:** поля Company/Contact лежат в `payload` (JSONB), верхнеуровнево — только «горячие»
+  (`id`, `status`, `company_id`, ...). Потребители обязаны «разворачивать»: `{**payload, **top-level}` (см. ADR-016).
+- **`flush + refresh`** после мутации ORM-объекта с `onupdate=func.now()`: `flush()` затем `refresh()`, иначе
+  Pydantic читает expired-атрибут вне async-greenlet (`MissingGreenlet`). Паттерн `_flush(obj)` в сервисах.
+- **NATS-подписки:** `Subscriber` с durable consumer, pull-subscribe. Обработчик получает `EventEnvelope`,
+  где `envelope.payload` — **Pydantic-модель**, не dict (обращаться через атрибуты: `payload.message.id`).
+- **События публикуются после flush**, `correlation_id` = id сущности. Регистрация новых subjects — в
+  `libs/nats-client/.../subjects.py` + payload-модель в `libs/contracts/.../events.py` (+ стрим в `streams.py`).
+- **LLM JSON:** ответ LLM валидируется через tolerant-базу (`LLMSchemaBase`): `null` для str/list → дефолт.
+  Битый JSON/схема → retry (до 3 попыток) + `AppError` (502), не 500.
+- **Фоновые задачи:** `asyncio.create_task` + хранение ссылок в `running_tasks` (иначе GC убьёт); своя session.
+- **Идемпотентность исходящих:** `Idempotency-Key` на POST/PATCH к другим сервисам (напр. `sourcing:{job}:company:{item}`).
+- **Схемы ответов-списков** (`*Summary`) нужны `from_attributes=True`, если валидируются из ORM-объектов.

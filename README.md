@@ -1,23 +1,23 @@
 # Outreach OS
 
-Мульти-тенантная API-first платформа для целевого outreach (intake → ICP → OSINT-сорсинг → генерация → ревью → отправка → аналитика).
+Мульти-тенантная API-first платформа для целевого outreach: intake → ICP → OSINT-сорсинг →
+генерация → ревью → отправка → аналитика. Собрана из автономных микросервисов (HTTP + NATS).
 
 ## Документация
 
-- [Архитектура](docs/architecture.md)
-- [Контракты](docs/contracts.md)
-- [Инфраструктура](docs/infra.md)
-- [Память агента](docs/memory/PROJECT.md)
-- [Цены LLM](docs/reference/pricing.md) · [Скоринг брифа](docs/reference/scoring.md) · [Langfuse](docs/reference/langfuse.md)
-- [Задачи Спринта 0](docs/tasks/sprint-0/) · [Спринта 1](docs/tasks/sprint-1/)
+- **Начни отсюда:** [`AGENTS.md`](AGENTS.md), [`docs/memory/PROJECT.md`](docs/memory/PROJECT.md), [`docs/memory/STATE.md`](docs/memory/STATE.md)
+- Архитектура: [`docs/architecture.md`](docs/architecture.md) · Контракты: [`docs/contracts.md`](docs/contracts.md) · Инфра: [`docs/infra.md`](docs/infra.md)
+- Справочники: [цены LLM](docs/reference/pricing.md) · [скоринг брифа](docs/reference/scoring.md) · [Langfuse](docs/reference/langfuse.md)
+- Задачи: [Sprint 0](docs/tasks/sprint-0/) · [1](docs/tasks/sprint-1/) · [2A](docs/tasks/sprint-2a/) · [2B](docs/tasks/sprint-2b/) · [2C](docs/tasks/sprint-2c/) · [3A](docs/tasks/sprint-3a/) · [3B](docs/tasks/sprint-3b/) · [3C](docs/tasks/sprint-3c/)
 
 ## Статус
 
-**Спринт 0 закрыт:** инфра (Postgres / NATS JetStream / Redis), библиотеки `common` / `contracts` / `db` / `nats-client` / `llm-client`, сервисы `tenant-service` и `llm-gateway`.
+**Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты.** Полный цикл outreach работает end-to-end
+(Brief → ICP → Sourcing → Composer → Review → Sender в dry-run). Следующий — Спринт 4 (analytics + reply-classifier + A/B).
+Актуальный статус — в [`docs/memory/STATE.md`](docs/memory/STATE.md).
 
-**Спринт 2A закрыт:** добавлен `contact-store` — единый источник правды по компаниям и контактам (upsert/дедуп/merge, stop-list, события).
-
-**Спринт 1 закрыт:** добавлен `brief-service` — адаптивный intake (сырой ввод → структурированный Brief v1 → уточняющие вопросы через LLM). Проверено: intake, ответы на вопросы, смена статусов (complete/abandon/reset/archive), события `brief.created/questions_asked/updated/completed`, RLS, идемпотентность, учёт LLM-вызовов.
+Сервисы: `tenant-service`, `llm-gateway`, `brief-service`, `contact-store`, `icp-service`,
+`sourcing-service`, `composer-service`, `review-queue`, `sender-email`, `dev-console`.
 
 ## Быстрый старт
 
@@ -25,32 +25,22 @@
     bash scripts/bootstrap.sh
     bash scripts/healthcheck.sh
 
+Dev-console (инспектор): `http://<host>:48110/`
+
 ## Разработка
 
     export PATH="$PWD/.tools:$PATH"   # локальный uv
     uv sync --all-packages --all-groups
     uv run ruff check .
     uv run mypy libs services
-    uv run pytest
+    uv run pytest                      # unit-тесты
+    uv run pytest -m integration       # интеграционные (нужен запущенный стек)
 
-## Проверка после запуска
+## Проверка после запуска (пример полного цикла)
 
-    # создать тенанта
-    curl -X POST http://127.0.0.1:48100/tenants \
-      -H "Content-Type: application/json" -H "Idempotency-Key: demo-1" \
-      -d '{"name":"Demo","slug":"demo"}'
+    # 1. тенант
+    T=$(curl -s -X POST http://127.0.0.1:48100/tenants -H "Content-Type: application/json" \
+        -d '{"name":"Demo","slug":"demo"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
 
-    # создать бриф
-    curl -X POST http://127.0.0.1:48102/briefs \
-      -H "Content-Type: application/json" -H "X-Tenant-ID: <tenant-id>" \
-      -d '{"text":"Гидроборты для грузовиков, ищем дистрибьюторов"}'
-
-    # создать компанию (contact-store)
-    curl -X POST http://127.0.0.1:48103/companies \
-      -H "Content-Type: application/json" -H "X-Tenant-ID: <tenant-id>" \
-      -d '{"payload":{"name":{"value":"ООО Ромашка","confidence":1.0,"evidence":[]},"domain":{"value":"romashka.ru","confidence":1.0,"evidence":[]}}}'
-
-    # вызвать LLM-шлюз (dev: провайдер mock)
-    curl -X POST http://127.0.0.1:48101/v1/complete \
-      -H "Content-Type: application/json" -H "X-Tenant-ID: <tenant-id>" \
-      -d '{"task_type":"smoke","user":"привет","model":"mock"}'
+    # 2. бриф -> ICP -> запуск поиска -> черновик -> ревью -> отправка
+    # см. docs/memory/STATE.md (карта портов) и эндпоинты в /docs каждого сервиса

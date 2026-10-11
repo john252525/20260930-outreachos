@@ -92,3 +92,38 @@
 - Флаги `--js-max-file-store`/`--js-max-memory` в CLI nats-server НЕ существуют — только конфиг-файл.
 - При добавлении новых стримов проверять: сумма их `max_bytes` не должна превышать `max_file_store`.
 - Мониторинг: `curl http://127.0.0.1:$NATS_MONITOR_PORT/jsz` → `reserved_storage` vs `config.max_storage`.
+
+## ADR-013: Пайплайн сообщений собран из трёх сервисов (composer / review / sender)
+
+**Контекст:** генерация, ревью и отправка — разные по природе (генерация stateless, ревью stateful, отправка рискованна для репутации).
+**Решение:** три отдельных сервиса, связанные событиями NATS:
+composer (`message.drafted`) → review-queue (`message.approved`/`message.rejected`) → sender (`message.sent`/`message.bounced`).
+**Последствия:**
+- Human-in-the-loop по умолчанию: `sender-email` отправляет только сообщения в статусе `approved`.
+- Авто-отправка — это флаг (по ТЗ включается после 500 писем с reply rate > baseline).
+- Статус Message живёт в composer (`draft → approved → sent/rejected/failed`), обновляется через `PATCH /messages/{id}`.
+
+## ADR-014: `sender-email` — только dry-run на dev, per-employee ящик
+
+**Контекст:** ошибочная отправка сжигает репутацию домена за дни. Нужен безопасный режим и правильная модель отправителя.
+**Решение:**
+- На dev `SENDER_DRY_RUN=true`: письмо не уходит, но SendAttempt и событие пишутся как обычно (`provider_message_id = dry-run-<id>`).
+- Отправляем с **личного ящика сотрудника** (SMTP/IMAP), не с общего `sales@` (deliverability + юридика + reply-detection).
+- Пароли ящиков шифруются **Fernet** (`SENDER_ENCRYPTION_KEY`), в БД — только шифротекст.
+- Ramp-up (warm-up) обязателен: `WarmUpScheduler` поднимает лимиты по дням (день 1: 5/день, 2/час … день 30: 50/10). Счётчики — в Redis.
+- Обязательны заголовки `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click`.
+**Последствия:** реальная отправка включается явно; тестовый ящик с `smtp_username="dry-run"` верифицируется без реального SMTP.
+
+## ADR-015: dev-console — не продуктовый UI, а тонкий инспектор
+
+**Контекст:** нужна прозрачность (что летит в NATS, что в таблицах), без вложений в продуктовый фронт.
+**Решение:** один сервис `dev-console` (vanilla HTML, без npm), проксирует API сервисов и читает JetStream read-only.
+**Последствия:**
+- Список всех тенантов через API невозможен (RLS), поэтому dev-console читает тенантов через **read-only admin-DSN** напрямую из Postgres — осознанное исключение только для инструмента.
+- Вкладки: Сервисы, События NATS, Компании/Контакты/Брифы/ICP/Поиски/Письма/Ревью/Stop-list.
+
+## ADR-016: Сериализация сущностей contact-store — «разворачивание payload»
+
+**Контекст:** `contact-store` хранит поля Company/Contact в JSONB-колонке `payload`, а верхнеуровневыми держит только «горячие» поля (`id`, `status`, `company_id`, ...).
+**Решение:** потребители (composer и др.) разворачивают entity хелпером `_unwrap`: `{**payload, **top-level}`.
+**Последствия:** при чтении контакта из contact-store в composer обязателен `_unwrap`, иначе поля (`full_name`, `emails`, ...) окажутся пустыми. Это уже ловили (recipient_snapshot был пустым).
