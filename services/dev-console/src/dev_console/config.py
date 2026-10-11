@@ -29,6 +29,9 @@ class Settings(BaseServiceSettings):
     review_queue_url: str = Field(
         default="http://review-queue:8000", alias="REVIEW_QUEUE_URL"
     )
+    sender_email_url: str = Field(
+        default="http://sender-email:8000", alias="SENDER_EMAIL_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 

@@ -195,6 +195,7 @@ services:
       SOURCING_SERVICE_URL: http://sourcing-service:8000
       COMPOSER_SERVICE_URL: http://composer-service:8000
       REVIEW_QUEUE_URL: http://review-queue:8000
+      SENDER_EMAIL_URL: http://sender-email:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:

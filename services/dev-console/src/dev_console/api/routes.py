@@ -16,6 +16,7 @@ SERVICE_NAMES = [
     "sourcing-service",
     "composer-service",
     "review-queue",
+    "sender-email",
 ]
 
 
