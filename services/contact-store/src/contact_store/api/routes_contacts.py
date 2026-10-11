@@ -15,6 +15,7 @@ from contact_store.schemas import (
     ContactStatusUpdate,
     ContactUpsert,
     ContactUpsertResult,
+    OutreachHistoryUpdate,
 )
 from contact_store.service import ContactService
 
@@ -108,4 +109,19 @@ async def update_status(
     svc: ContactService = Depends(get_contact_service),
 ) -> ContactRead:
     contact = await svc.update_status(contact_id, status=data.status, trace_id=get_trace_id() or "")
+    return ContactRead.model_validate(contact)
+
+
+@router.patch("/{contact_id}/outreach-history", response_model=ContactRead)
+async def update_outreach_history(
+    contact_id: UUID,
+    data: OutreachHistoryUpdate,
+    svc: ContactService = Depends(get_contact_service),
+) -> ContactRead:
+    contact = await svc.update_outreach_history(
+        contact_id,
+        replied_positive=data.replied_positive,
+        last_reply_at=data.last_reply_at,
+        last_contacted_at=data.last_contacted_at,
+    )
     return ContactRead.model_validate(contact)

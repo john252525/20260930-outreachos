@@ -127,3 +127,39 @@ composer (`message.drafted`) → review-queue (`message.approved`/`message.rejec
 **Контекст:** `contact-store` хранит поля Company/Contact в JSONB-колонке `payload`, а верхнеуровневыми держит только «горячие» поля (`id`, `status`, `company_id`, ...).
 **Решение:** потребители (composer и др.) разворачивают entity хелпером `_unwrap`: `{**payload, **top-level}`.
 **Последствия:** при чтении контакта из contact-store в composer обязателен `_unwrap`, иначе поля (`full_name`, `emails`, ...) окажутся пустыми. Это уже ловили (recipient_snapshot был пустым).
+
+## ADR-017: analytics-service читает через admin-DSN, изоляция — явным фильтром
+
+**Контекст:** `analytics-service` считает метрики по данным других сервисов (`messages`, `send_attempts`,
+`replies`, `search_jobs`, `contacts`) и materialized views в схеме `analytics`. Приложение ходит под ролью
+`outreach_app` (NOBYPASSRLS). Но:
+- `REFRESH MATERIALIZED VIEW` под app-ролью наполняет MV только теми строками, что видны при текущем
+  `app.tenant_id` (без него — пусто).
+- MV — не таблицы, RLS-политики на них не навешиваются.
+- Alert engine должен перечислять всех тенантов.
+
+**Решение:**
+- Миграции и `REFRESH` выполняются владельцем (`outreach`) — MV строятся по всем тенантам.
+- `analytics-service` использует `DATABASE_URL_ADMIN` (владелец) для чтения MV и прямых запросов;
+  tenant-изоляция обеспечивается **явным `WHERE tenant_id = :tid`** в каждом запросе.
+- Сервис ничего не пишет в чужие таблицы (read-only по контракту; никаких INSERT/UPDATE — только палитра
+  SELECT и `REFRESH`).
+
+**Последствия:**
+- Это осознанное исключение из RLS — как dev-console (ADR-015), но для аналитики.
+- Все API-запросы обязаны передавать `tenant_id`; функции репозитория без tenant-фильтра запрещены.
+- Кэш метрик в Redis ключуется по `tenant_id`.
+
+## ADR-018: MV refresh — plain REFRESH (не CONCURRENTLY) на dev
+
+**Контекст:** materialized views в схеме `analytics` имеют уникальные индексы для быстрого
+апдейта. Однако часть индексов — expression-индексы (`COALESCE(template_id, '')`), а
+`REFRESH MATERIALIZED VIEW CONCURRENTLY` требует уникальный индекс **без** выражений.
+На таких MV `CONCURRENTLY` падает с ошибкой.
+
+**Решение:** `MVRefresher` использует обычный `REFRESH MATERIALIZED VIEW` (блокирует чтение
+на время апдейта). На dev объёмы малы, интервал 300с — блокировка незаметна. Для prod можно
+перейти на `CONCURRENTLY`, заменив COALESCE-индексы на индексы с materialized-колонками.
+
+**Последствия:** апдейт MV ненадолго блокирует дашборд-запросы; приемлемо для dev.
+

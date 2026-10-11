@@ -17,6 +17,9 @@ SERVICE_NAMES = [
     "composer-service",
     "review-queue",
     "sender-email",
+    "reply-classifier",
+    "analytics-service",
+    "experiments-service",
 ]
 
 
@@ -118,7 +121,10 @@ async def data_review_items(
 ) -> Any:
     proxy = request.app.state.proxy
     status, body = await proxy.get(
-        "review-queue", "/review-items", tenant_id=tenant, params={"status": "pending", "limit": limit}
+        "review-queue",
+        "/review-items",
+        tenant_id=tenant,
+        params={"status": "pending", "limit": limit},
     )
     return JSONResponse(content=body, status_code=status)
 
@@ -172,4 +178,50 @@ async def data_stoplist(
     status, body = await proxy.get(
         "contact-store", "/stoplist", tenant_id=tenant, params={"limit": limit}
     )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/replies")
+async def data_replies(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "reply-classifier", "/replies", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/experiments")
+async def data_experiments(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "experiments-service", "/experiments", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/funnel")
+async def data_funnel(
+    request: Request,
+    tenant: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get("analytics-service", "/analytics/funnel", tenant_id=tenant)
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/analytics-overview")
+async def data_analytics_overview(
+    request: Request,
+    tenant: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get("analytics-service", "/analytics/overview", tenant_id=tenant)
     return JSONResponse(content=body, status_code=status)

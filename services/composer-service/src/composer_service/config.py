@@ -11,6 +11,9 @@ class Settings(BaseServiceSettings):
     brief_service_url: str = Field(default="http://brief-service:8000", alias="BRIEF_SERVICE_URL")
     icp_service_url: str = Field(default="http://icp-service:8000", alias="ICP_SERVICE_URL")
     llm_gateway_url: str = Field(default="http://llm-gateway:8000", alias="LLM_GATEWAY_URL")
+    experiments_service_url: str = Field(
+        default="http://experiments-service:8000", alias="EXPERIMENTS_SERVICE_URL"
+    )
 
     # LLM
     llm_model: str = Field(default="deepseek-flash", alias="COMPOSER_LLM_MODEL")

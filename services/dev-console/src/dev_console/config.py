@@ -26,11 +26,16 @@ class Settings(BaseServiceSettings):
     composer_service_url: str = Field(
         default="http://composer-service:8000", alias="COMPOSER_SERVICE_URL"
     )
-    review_queue_url: str = Field(
-        default="http://review-queue:8000", alias="REVIEW_QUEUE_URL"
+    review_queue_url: str = Field(default="http://review-queue:8000", alias="REVIEW_QUEUE_URL")
+    sender_email_url: str = Field(default="http://sender-email:8000", alias="SENDER_EMAIL_URL")
+    reply_classifier_url: str = Field(
+        default="http://reply-classifier:8000", alias="REPLY_CLASSIFIER_URL"
     )
-    sender_email_url: str = Field(
-        default="http://sender-email:8000", alias="SENDER_EMAIL_URL"
+    analytics_service_url: str = Field(
+        default="http://analytics-service:8000", alias="ANALYTICS_SERVICE_URL"
+    )
+    experiments_service_url: str = Field(
+        default="http://experiments-service:8000", alias="EXPERIMENTS_SERVICE_URL"
     )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")

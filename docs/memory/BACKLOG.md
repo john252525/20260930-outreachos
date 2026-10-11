@@ -35,12 +35,14 @@
 
 ## Отложено (Next / Later)
 
-- **Спринт 4:** `analytics-service` (метрики, reply rate, bounce rate, A/B), `reply-classifier` (классификация входящих), A/B-движок (Experiment first-class).
-- **Спринт 5:** `cost-tracker`.
+- **Спринт 4:** ✅ закрыт (reply-classifier + analytics-service + experiments-service).
+- **Спринт 5:** orchestrator, auto-revision, `cost-tracker`, Telegram/WhatsApp senders.
 - **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
 - **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).
 - Stage/prod окружения, Prometheus+Grafana, Loki, backup Postgres, SOPS+age для секретов.
-- IMAP-poller в sender-email: код не реализован в 3C (только dry-run отправка). Reply/bounce detection — позже.
+- IMAP-poller в sender-email: код не реализован (только dry-run отправка). Reply detection доставляется
+  событием `reply.received`; полноценный IMAP-поллер — позже.
+- `analytics`: MV рефрешатся plain REFRESH (expression-индексы мешают CONCURRENTLY, ADR-018).
 
 ## Идеи (не обязательства)
 

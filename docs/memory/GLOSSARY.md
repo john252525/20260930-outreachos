@@ -60,3 +60,15 @@
 - **SenderAccount / SendAttempt** — подключённый ящик (SMTP/IMAP, пароль зашифрован) и история попыток отправки.
 - **Dry-run** — режим sender: письмо не уходит, но попытка и событие логируются (`provider_message_id=dry-run-<id>`).
 - **List-Unsubscribe** — заголовок письма для отписки в один клик (требование Gmail/Yandex).
+
+## Спринт 4
+
+- **Composite classifier** — сначала правила, затем LLM (fallback), при ошибке LLM — результат правил или UNKNOWN.
+- **ReplyCategory / Sentiment / NextAction** — категория ответа, тональность, рекомендованное действие.
+- **needs_review** — статус Reply при confidence < `REPLY_MIN_CONFIDENCE`.
+- **Materialized view (MV)** — предпосчитанный агрегат в схеме `analytics`; рефреш по таймеру.
+- **Funnel** — contacts → contacted → sent → replied → replied_positive (+ bounced/closed).
+- **VariantAssigner** — детерминированное распределение контакта по варианту (sha256 `exp:contact`).
+- **StatsEngine** — two-proportion z-test + Wilson CI + Bonferroni-коррекция + MDE.
+- **MDE (minimum detectable effect)** — минимальный относительный лифт, который считаем значимым.
+- **analytics.alert** — событие при низком reply rate / высоком bounce rate.

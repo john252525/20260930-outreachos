@@ -28,6 +28,7 @@ STREAMS: list[StreamConfig] = [
             "message.>",
             "reply.>",
             "experiment.>",
+            "analytics.>",
         ],
         max_age_seconds=365 * 24 * 3600,
         max_bytes=512 * 1024 * 1024,

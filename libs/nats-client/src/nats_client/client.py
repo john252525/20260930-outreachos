@@ -46,7 +46,7 @@ class NATSConnection:
         assert self._js is not None
         for cfg in STREAMS:
             try:
-                await self._js.stream_info(cfg.name)
+                info = await self._js.stream_info(cfg.name)
             except NotFoundError:
                 await self._js.add_stream(
                     name=cfg.name,
@@ -57,6 +57,20 @@ class NATSConnection:
                     retention=cfg.retention,
                 )
                 logger.info("Created stream: %s", cfg.name)
+                continue
+
+            current = set(info.config.subjects or [])
+            desired = set(cfg.subjects)
+            if not desired.issubset(current):
+                await self._js.update_stream(
+                    name=cfg.name,
+                    subjects=sorted(current | desired),
+                    max_age=cfg.max_age_seconds,
+                    max_bytes=cfg.max_bytes,
+                )
+                logger.info(
+                    "Updated stream subjects: %s -> %s", cfg.name, sorted(current | desired)
+                )
 
     async def close(self) -> None:
         if self._nc is not None and not self._nc.is_closed:

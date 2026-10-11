@@ -93,6 +93,13 @@ class ContactStatusUpdate(BaseModel):
     )
 
 
+class OutreachHistoryUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    replied_positive: bool | None = None
+    last_reply_at: datetime | None = None
+    last_contacted_at: datetime | None = None
+
+
 class ContactBulkUpsert(BaseModel):
     model_config = ConfigDict(extra="forbid")
     items: list[ContactUpsert] = Field(min_length=1, max_length=500)

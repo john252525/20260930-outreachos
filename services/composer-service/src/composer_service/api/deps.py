@@ -19,6 +19,7 @@ async def get_service(request: Request) -> AsyncIterator[ComposerService]:
         yield ComposerService(
             repo=MessageRepository(session),
             contact_store=request.app.state.contact_store,
+            experiments_client=request.app.state.experiments_client,
             brief_client=request.app.state.brief_client,
             icp_client=request.app.state.icp_client,
             template_registry=request.app.state.template_registry,

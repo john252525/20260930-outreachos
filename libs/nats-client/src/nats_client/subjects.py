@@ -44,6 +44,8 @@ class Subjects(StrEnum):
     EXPERIMENT_CREATED = "experiment.created"
     EXPERIMENT_VARIANT_WON = "experiment.variant_won"
 
+    ANALYTICS_ALERT = "analytics.alert"
+
     LLM_CALLED = "llm.called"
     COST_RECORDED = "cost.recorded"
 
@@ -67,6 +69,7 @@ SUBJECT_TO_STREAM: dict[str, str] = {
     "message": "BRIEFS",
     "reply": "BRIEFS",
     "experiment": "BRIEFS",
+    "analytics": "BRIEFS",
     "llm": "LLM_CALLS",
     "cost": "LLM_CALLS",
     "system": "SYSTEM",

@@ -12,8 +12,9 @@
 
 ## Статус
 
-**Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты.** Полный цикл outreach работает end-to-end
-(Brief → ICP → Sourcing → Composer → Review → Sender в dry-run). Следующий — Спринт 4 (analytics + reply-classifier + A/B).
+**Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) и 4 (4A/4B/4C) закрыты.** Полный цикл работает end-to-end
+(Brief → ICP → Sourcing → Composer → Review → Sender в dry-run → Reply-classifier → Analytics → A/B).
+Следующий — Спринт 5 (orchestrator + auto-revision + Telegram/WhatsApp).
 Актуальный статус — в [`docs/memory/STATE.md`](docs/memory/STATE.md).
 
 Сервисы: `tenant-service`, `llm-gateway`, `brief-service`, `contact-store`, `icp-service`,

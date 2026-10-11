@@ -5,7 +5,7 @@
 
 ## Быстрый старт (TL;DR)
 
-- **Статус:** Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты. Следующий — **Спринт 4** (analytics + reply-classifier + A/B).
+- **Статус:** Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C), 4 (4A/4B/4C) закрыты. Следующий — **Спринт 5** (orchestrator + auto-revision + Telegram/WhatsApp).
   Актуальное состояние — в `docs/memory/STATE.md`.
 - **Стек:** Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - **uv** лежит локально: `export PATH="$PWD/.tools:$PATH"`.

@@ -9,6 +9,7 @@ import structlog
 from common.errors import NotFoundError, ValidationError
 from composer_service.clients.brief_client import BriefClient
 from composer_service.clients.contact_store_client import ContactStoreClient
+from composer_service.clients.experiments_client import ExperimentsClient
 from composer_service.clients.icp_client import ICPClient
 from composer_service.config import Settings
 from composer_service.events import emit_message_drafted
@@ -29,6 +30,7 @@ class ComposerService:
         self,
         repo: MessageRepository,
         contact_store: ContactStoreClient,
+        experiments_client: ExperimentsClient,
         brief_client: BriefClient,
         icp_client: ICPClient,
         template_registry: TemplateRegistry,
@@ -39,6 +41,7 @@ class ComposerService:
     ) -> None:
         self._repo = repo
         self._contact_store = contact_store
+        self._experiments = experiments_client
         self._brief = brief_client
         self._icp = icp_client
         self._templates = template_registry
@@ -93,8 +96,26 @@ class ComposerService:
             str(brief_id), tenant_id=str(tenant_id), trace_id=trace_id
         )
 
+        variant_id = data.variant_id
+        experiment_template_id: str | None = None
+        if data.experiment_id and not variant_id:
+            try:
+                assigned = await self._experiments.assign_variant(
+                    experiment_id=data.experiment_id,
+                    contact_id=data.contact_id,
+                    tenant_id=str(tenant_id),
+                    trace_id=trace_id,
+                    idempotency_key=(f"composer:assign:{data.experiment_id}:{data.contact_id}"),
+                )
+                variant_id = assigned.get("variant_id")
+                experiment_template_id = assigned.get("template_id")
+            except Exception as e:
+                logger.warning("experiment_assign_failed", error=str(e))
+
         if data.template_id:
             template = self._templates.get(data.template_id, data.template_version)
+        elif experiment_template_id:
+            template = self._templates.get(experiment_template_id, data.template_version)
         else:
             template = self._templates.default_for_channel(data.channel)
 
@@ -142,6 +163,8 @@ class ComposerService:
         personalization = {
             "template_id": template.template_id,
             "template_version": template.template_version,
+            "segment_id": data.segment_id,
+            "icp_id": str(data.icp_id),
             "llm_model": self._settings.llm_model,
             "variables_used": rendered.variables_used,
             "factual_claims": [
@@ -160,7 +183,7 @@ class ComposerService:
         if data.experiment_id:
             experiment = {
                 "experiment_id": str(data.experiment_id),
-                "variant_id": data.variant_id,
+                "variant_id": variant_id,
                 "hypothesis": data.hypothesis,
             }
 

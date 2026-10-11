@@ -1,12 +1,12 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-11 (iter 009 — memory cleanup)
+> Последнее обновление: 2026-10-11 (iter 010 — Спринт 4: analytics + reply-classifier + A/B)
 
 ## TL;DR для нового агента
 
 - Платформа **Outreach OS** — мульти-тенантный outreach из API-first микросервисов.
-- **Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) закрыты.** Следующий — **Спринт 4** (analytics + reply-classifier + A/B).
+- **Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C), 4 (4A/4B/4C) закрыты.** Следующий — **Спринт 5** (orchestrator + auto-revision + Telegram/WhatsApp).
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
@@ -73,6 +73,44 @@
 - Подписка на `message.approved.*` → отправка → `message.sent`.
 - Endpoints: accounts CRUD + `verify|pause|resume`.
 
+
+### Спринт 4 — analytics + reply-classifier + A/B ✅
+- **4A `reply-classifier`** (порт 48111): таблица `replies` (RLS+FORCE, уникальный индекс
+  `(tenant_id, message_id, from_email)` для дедупа). `CompositeClassifier` = `RuleBasedClassifier`
+  (auto-reply / OOO / unsubscribe / wrong_person / not_interested / positive) → `LLMClassifier`
+  (`task_type=reply_classify_v1`, temperature 0.1, JSON-схема). Подписка на `reply.received.*`
+  (BRIEFS, durable `reply-classifier`). API: `GET /replies`, `GET /replies/{id}`,
+  `POST /replies/{id}/handle`, `POST /replies/{id}/reclassify`. Событие `reply.classified`.
+  Автоотписка контакта при `unsubscribe`; `replied_positive`/`last_reply_at` при позитиве.
+  `status=needs_review` при confidence < `REPLY_MIN_CONFIDENCE` (0.6).
+- **4B `analytics-service`** (порт 48112): схема `analytics` + 5 MATERIALIZED VIEW
+  (`mv_daily_message_metrics`, `mv_daily_reply_metrics`, `mv_daily_sender_metrics`,
+  `mv_daily_sourcing_metrics`, `mv_funnel`). Читает через owner-DSN (`DATABASE_URL_ADMIN`,
+  ADR-017), изоляция — явным `WHERE tenant_id`. `MVRefresher` (раз в 300с) + `AlertEngine`
+  (раз в час, только при выборке ≥50/≥20) → событие `analytics.alert`. API:
+  `/analytics/overview|funnel|by-template|by-sender|reply-categories|sourcing|segments|daily|
+  experiment-variants`. Кэш в Redis 60с.
+- **4C `experiments-service`** (порт 48113): таблица `experiments` (RLS+FORCE, unique
+  `(tenant_id, name)`). `VariantAssigner` (детерминированный sha256-хеш `exp:contact`),
+  `StatsEngine` (two-proportion z-test + Wilson CI + Bonferroni + MDE). API:
+  `POST/GET /experiments`, `GET /experiments/{id}`, `POST /experiments/{id}/{start|pause|evaluate|assign}`.
+  События `experiment.created`, `experiment.variant_won`. Авто-evaluate раз в час.
+- **Интеграция:** composer при `experiment_id` запрашивает `assign` и берёт `template_id` варианта;
+  `experiment` пишется в `personalization` сообщения. `segment_id`/`icp_id` добавлены в `personalization`.
+- **Response-контракт `reply.received` расширен** (`from_email/from_name/subject/body/received_at/
+  in_reply_to/references/message_id_header`) — backward-compatible (поля опциональны).
+- **New subject** `analytics.alert` (стрим BRIEFS); bootstrap NATS теперь идемпотентно
+  до-писывает subjects существующих стримов (`update_stream`).
+- **contact-store:** новый endpoint `PATCH /contacts/{id}/outreach-history`.
+- **composer:** `json_utils` теперь `json.loads(..., strict=False)` (устойчивость к literal
+  control-characters в LLM-JSON).
+- **dev-console:** вкладки Ответы/Эксперименты/Аналитика; рабочий Swagger-прокси `/docs/{service}`.
+
+### Побочные фиксы Спринта 4
+- `libs/nats-client`: идемпотентное обновление subjects стрима при старте.
+- `libs/contracts`: `ReplySnapshot` расширен; `AnalyticsAlertPayload`; `EVENT_PAYLOAD_MAP`.
+- `libs/nats-client/subjects.py`: `ANALYTICS_ALERT`.
+
 ### Dev-console ✅
 - `services/dev-console` (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы
   компаний/контактов/брифов/ICP/поисков/писем/ревью/stop-list. Проксирует API + читает JetStream (read-only).
@@ -85,8 +123,7 @@
 - (нет)
 
 ## Далее (Next)
-- **Спринт 4**: `analytics-service` (метрики, reply rate, bounce rate), `reply-classifier` (классификация входящих через LLM), A/B-движок (Experiment как first-class).
-- **Спринт 5**: `cost-tracker` (учёт расходов по тенантам).
+- **Спринт 5**: orchestrator (автосвязывание шагов), auto-revision, `cost-tracker`, Telegram/WhatsApp senders.
 - Позже: Telegram/WhatsApp sender (3D), LinkedIn (3E), зарубежные OSINT-источники (2D), stage/prod окружения.
 
 ## Блокеры
@@ -107,6 +144,9 @@
 | composer-service | 48106 | 8000 |
 | review-queue | 48107 | 8000 |
 | sender-email | 48108 | 8000 |
+| reply-classifier | 48111 | 8000 |
+| analytics-service | 48112 | 8000 |
+| experiments-service | 48113 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |

@@ -315,6 +315,25 @@ class ContactService:
             await events.emit_contact_updated(self._publisher, contact, trace_id=trace_id)
         return contact
 
+    async def update_outreach_history(
+        self,
+        contact_id: UUID,
+        *,
+        replied_positive: bool | None = None,
+        last_reply_at: Any | None = None,
+        last_contacted_at: Any | None = None,
+    ) -> Contact:
+        contact = await self.get(contact_id)
+        if replied_positive is not None:
+            contact.replied_positive = replied_positive
+        if last_reply_at is not None:
+            contact.last_reply_at = last_reply_at
+        if last_contacted_at is not None:
+            contact.last_contacted_at = last_contacted_at
+        await self._repo.session.flush()
+        await self._repo.session.refresh(contact)
+        return contact
+
     async def get(self, contact_id: UUID) -> Contact:
         contact = await self._repo.get(contact_id)
         if contact is None:

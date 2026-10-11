@@ -24,7 +24,7 @@ def parse_json_strict(raw: str) -> dict[str, object]:
         text = text[first : last + 1]
 
     try:
-        parsed = json.loads(text)
+        parsed = json.loads(text, strict=False)
     except json.JSONDecodeError as e:
         raise LLMJSONError(f"LLM returned invalid JSON: {e}") from e
 

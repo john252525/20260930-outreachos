@@ -215,6 +215,14 @@ class ReplySnapshot(BaseModel):
     message_id: UUID
     contact_id: UUID
     channel: Channel
+    from_email: str = ""
+    from_name: str | None = None
+    subject: str | None = None
+    body: str = ""
+    received_at: str | None = None
+    in_reply_to: str | None = None
+    references: str | None = None
+    message_id_header: str | None = None
 
 
 class ReplyReceivedPayload(BaseModel):
@@ -227,6 +235,14 @@ class ReplyClassifiedPayload(BaseModel):
     reply_id: UUID
     category: ReplyCategory
     confidence: float = 0.0
+
+
+class AnalyticsAlertPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    alert_type: str
+    value: float = 0.0
+    threshold: float = 0.0
+    message: str = ""
 
 
 class ExperimentCreatedPayload(BaseModel):
@@ -288,6 +304,7 @@ EVENT_PAYLOAD_MAP: dict[str, type[BaseModel]] = {
     "message.failed": MessageFailedPayload,
     "reply.received": ReplyReceivedPayload,
     "reply.classified": ReplyClassifiedPayload,
+    "analytics.alert": AnalyticsAlertPayload,
     "experiment.created": ExperimentCreatedPayload,
     "experiment.variant_won": ExperimentVariantWonPayload,
     "llm.called": LLMCalledPayload,

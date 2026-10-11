@@ -25,9 +25,11 @@
                        |  message.approved
     отправка      sender-email       SMTP + ramp-up + stop-list + List-Unsubscribe -> message.sent
                        |
-    аналитика     analytics-service (Спринт 4) метрики, reply rate, A/B
-                  reply-classifier  (Спринт 4) классификация ответов через LLM
-                  cost-tracker      (Спринт 5) учёт расходов
+    аналитика     reply-classifier     reply.received -> классификация -> reply.classified
+                       |  reply.classified
+                  analytics-service    метрики (MV), funnel, reply rate, alerts
+                  experiments-service  A/B (assign_variant), experiment.variant_won
+                  cost-tracker         (Спринт 5) учёт расходов
 
 Плюс `tenant-service` (проекты/тенанты) и `llm-gateway` (единая точка LLM) — инфраструктурные, используются всеми.
 
@@ -46,7 +48,8 @@
 
     libs/            common, contracts, db, nats-client, llm-client
     services/        tenant-service, llm-gateway, brief-service, contact-store, icp-service,
-                     sourcing-service, composer-service, review-queue, sender-email, dev-console
+                     sourcing-service, composer-service, review-queue, sender-email,
+                     reply-classifier, analytics-service, experiments-service, dev-console
     infra/           docker-compose.dev.yml, postgres/init, nats/nats-server.conf
     scripts/         bootstrap, migrate, healthcheck, nats-cli, psql, redis-cli, logs, rebuild
     docs/            memory/, reference/, tasks/sprint-*/, architecture.md, contracts.md, infra.md

@@ -196,6 +196,9 @@ services:
       COMPOSER_SERVICE_URL: http://composer-service:8000
       REVIEW_QUEUE_URL: http://review-queue:8000
       SENDER_EMAIL_URL: http://sender-email:8000
+      REPLY_CLASSIFIER_URL: http://reply-classifier:8000
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+      EXPERIMENTS_SERVICE_URL: http://experiments-service:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -280,6 +283,7 @@ services:
       BRIEF_SERVICE_URL: http://brief-service:8000
       ICP_SERVICE_URL: http://icp-service:8000
       LLM_GATEWAY_URL: http://llm-gateway:8000
+      EXPERIMENTS_SERVICE_URL: http://experiments-service:8000
       COMPOSER_LLM_MODEL: ${COMPOSER_LLM_MODEL:-deepseek-flash}
       COMPOSER_STRICT_FACT_CHECK: ${COMPOSER_STRICT_FACT_CHECK:-true}
     ports:
@@ -336,6 +340,84 @@ services:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}
       redis: {condition: service_healthy}
+  reply-classifier:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/reply-classifier/Dockerfile
+    container_name: outreach-os-reply-classifier
+    environment:
+      SERVICE_NAME: reply-classifier
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/9
+      LLM_GATEWAY_URL: http://llm-gateway:8000
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      REPLY_LLM_MODEL: ${REPLY_LLM_MODEL:-deepseek-flash}
+      REPLY_MIN_CONFIDENCE: ${REPLY_MIN_CONFIDENCE:-0.6}
+    ports:
+      - "0.0.0.0:${REPLY_CLASSIFIER_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      composer-service: {condition: service_started}
+
+  analytics-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/analytics-service/Dockerfile
+    container_name: outreach-os-analytics-service
+    environment:
+      SERVICE_NAME: analytics-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_ADMIN: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
+      ANALYTICS_MV_REFRESH_ENABLED: ${ANALYTICS_MV_REFRESH_ENABLED:-true}
+      ANALYTICS_ALERTS_ENABLED: ${ANALYTICS_ALERTS_ENABLED:-true}
+    ports:
+      - "0.0.0.0:${ANALYTICS_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  experiments-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/experiments-service/Dockerfile
+    container_name: outreach-os-experiments-service
+    environment:
+      SERVICE_NAME: experiments-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+      EXPERIMENTS_AUTO_EVALUATE: ${EXPERIMENTS_AUTO_EVALUATE:-true}
+    ports:
+      - "0.0.0.0:${EXPERIMENTS_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      analytics-service: {condition: service_started}
+
 
 volumes:
   postgres_data: {name: outreach-os_postgres_data}
