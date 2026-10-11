@@ -28,12 +28,12 @@
 | `icp-service` | 2B ✅ | Построение ICP/сегментов |
 | `sourcing-service` | 2C ✅ | OSINT-поиск компаний и контактов |
 | `contact-store` | 2A ✅ | Единая база компаний/контактов |
-| `composer-service` | 3 | Генерация сообщений |
-| `review-queue` | 3 | Human-in-the-loop очередь |
-| `sender-email` | 4 | Отправка email с rate-limit и ramp-up |
-| `reply-classifier` | 4 | Классификация входящих |
-| `analytics-service` | 4 | Метрики, A/B |
-| `cost-tracker` | 5 | Учёт расходов |
+| `composer-service` | 3A ✅ | Генерация сообщений |
+| `review-queue` | 3B ✅ | Human-in-the-loop очередь |
+| `sender-email` | 3C ✅ | Отправка email с rate-limit и ramp-up |
+| `reply-classifier` | 4 (pending) | Классификация входящих |
+| `analytics-service` | 4 (pending) | Метрики, A/B |
+| `cost-tracker` | 5 (pending) | Учёт расходов |
 
 ## События (NATS subjects)
 

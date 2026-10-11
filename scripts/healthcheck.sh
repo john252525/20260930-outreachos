@@ -24,5 +24,6 @@ check "icp-service"    "http://127.0.0.1:${ICP_SERVICE_PORT}/healthz"
 check "sourcing-service" "http://127.0.0.1:${SOURCING_SERVICE_PORT}/healthz"
 check "composer-service" "http://127.0.0.1:${COMPOSER_SERVICE_PORT}/healthz"
 check "review-queue"    "http://127.0.0.1:${REVIEW_QUEUE_PORT}/healthz"
+check "sender-email"    "http://127.0.0.1:${SENDER_EMAIL_PORT}/healthz"
 check "nats-monitor"   "http://127.0.0.1:${NATS_MONITOR_PORT}/healthz"
 [[ $FAILED -eq 0 ]] || exit 1

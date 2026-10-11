@@ -42,6 +42,9 @@ class MessageUpdate(BaseModel):
     body_text: str | None = None
     status: str | None = None
     review: dict[str, Any] | None = None
+    delivery: dict[str, Any] | None = None
+    engagement: dict[str, Any] | None = None
+    sent_at: datetime | None = None
 
 
 class MessageRead(BaseModel):

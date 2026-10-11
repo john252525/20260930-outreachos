@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-02 (iter 005)
+> Последнее обновление: 2026-10-11 (iter 006-008)
 
 ## Сделано (Done)
 
@@ -66,6 +66,24 @@
   - События: `contacts.search_started`, `contacts.found`, `contacts.enriched` (стрим CONTACTS).
 - Dev-console: вкладка «Поиски» + sourcing-service в health.
 
+### Спринт 3A — composer-service ✅
+- **services/composer-service**: генерация писем. TemplateRegistry (`email_cold_outreach_v1`, `email_followup_v1`),
+  Personalizer (LLM), FactChecker (детерминированный), evidence/factual_claims.
+  - Таблица `messages` (RLS+FORCE). Endpoints: `POST /messages`, `GET /messages`, `GET/PATCH /messages/{id}`.
+  - Событие `message.drafted`.
+
+### Спринт 3B — review-queue ✅
+- **services/review-queue**: human-in-the-loop. Подписка на `message.drafted.*` (durable consumer) → ReviewItem.
+  - Endpoints: list, get, approve/reject/edit/assign, bulk-approve.
+  - События `message.approved`, `message.rejected`. Обновляет Message в composer через PATCH.
+
+### Спринт 3C — sender-email ✅
+- **services/sender-email**: отправка (dev: dry-run). SenderAccount (пароли шифруются Fernet), SendAttempt.
+  - SMTP-клиент (aiosmtplib), ramp-up/warm-up (Redis-счётчики), AccountSelector, stop-list проверка.
+  - Подписка на `message.approved.*` → dry-run/реальная отправка → `message.sent`.
+  - Endpoints: accounts CRUD, verify/pause/resume.
+  - `SENDER_ENCRYPTION_KEY` (Fernet), `SENDER_DRY_RUN=true` на dev.
+
 ### Dev-console ✅
 - `services/dev-console` — внутренний инспектор (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы компаний/контактов/брифов/stop-list. Проксирует API и читает JetStream (read-only). Одна HTML-страница, без npm.
 - UI: `http://<host>:48110/`, OpenAPI: `/docs`, эндпоинты `/api/*`.
@@ -95,6 +113,9 @@
 | contact-store | 48103 | 8000 |
 | icp-service | 48104 | 8000 |
 | sourcing-service | 48105 | 8000 |
+| composer-service | 48106 | 8000 |
+| review-queue | 48107 | 8000 |
+| sender-email | 48108 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |

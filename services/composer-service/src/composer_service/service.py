@@ -47,9 +47,22 @@ class ComposerService:
         self._publisher = publisher
         self._settings = settings
 
+    @staticmethod
+    def _unwrap(entity: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Flatten a contact-store entity: merge ``payload`` with top-level keys."""
+        if entity is None:
+            return None
+        payload = dict(entity.get("payload") or {})
+        for key in ("id", "company_id", "status", "fingerprint", "role_category", "seniority"):
+            if entity.get(key) is not None:
+                payload[key] = entity[key]
+        return payload
+
     async def draft(self, *, tenant_id: UUID, data: DraftRequest, trace_id: str) -> Message:
-        contact = await self._contact_store.get_contact(
-            data.contact_id, tenant_id=str(tenant_id), trace_id=trace_id
+        contact = self._unwrap(
+            await self._contact_store.get_contact(
+                data.contact_id, tenant_id=str(tenant_id), trace_id=trace_id
+            )
         )
         if contact is None:
             raise NotFoundError(f"Contact {data.contact_id} not found")
@@ -61,8 +74,10 @@ class ComposerService:
             UUID(contact["company_id"]) if contact.get("company_id") else None
         )
         if company_id:
-            company = await self._contact_store.get_company(
-                company_id, tenant_id=str(tenant_id), trace_id=trace_id
+            company = self._unwrap(
+                await self._contact_store.get_company(
+                    company_id, tenant_id=str(tenant_id), trace_id=trace_id
+                )
             )
 
         icp = await self._icp.get_icp(str(data.icp_id), tenant_id=str(tenant_id), trace_id=trace_id)
@@ -200,6 +215,12 @@ class ComposerService:
             msg.status = data.status
         if data.review is not None:
             msg.review = {**(msg.review or {}), **data.review}
+        if data.delivery is not None:
+            msg.delivery = {**(msg.delivery or {}), **data.delivery}
+        if data.engagement is not None:
+            msg.engagement = {**(msg.engagement or {}), **data.engagement}
+        if data.sent_at is not None:
+            msg.sent_at = data.sent_at
         await self._repo.session.flush()
         await self._repo.session.refresh(msg)
         return msg
