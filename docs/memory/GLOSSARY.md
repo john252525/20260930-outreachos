@@ -84,3 +84,13 @@
 - **Warm-up (Telegram)** — постепенный рост лимитов (3→30/день).
 - **FloodWait** — лимит Telegram; аккаунт помечается и приостанавливается.
 - **Consent-гейт** — telegram отправляется только при `messenger_opt_in=granted` или prior reply.
+
+## Спринт 6
+
+- **BFF (backend-for-frontend)** — Next.js API-прокси, скрывает сервисы и секреты от браузера.
+- **SERVICE_TOKEN** — общий токен для BFF→сервисы (opt-in enforcement).
+- **TenantSettings** — per-tenant конфиг (флаги авто, лимиты, каналы, алерты, квоты, брендинг).
+- **LinkedIn double opt-in** — глобальный `LINKEDIN_ENABLED` + per-tenant `linkedin_enabled`.
+- **Connection check** — LinkedIn-сообщение только при принятом connection request.
+- **Captcha → ручное решение** — аккаунт `captcha_required`, `/solve-captcha`.
+- **home_region** — регион хранения данных tenant'а (multi-region groundwork).

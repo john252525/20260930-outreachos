@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 
 from common.context import get_trace_id
 from nats_client.publisher import Publisher
-from tenant_service.api.deps import get_publisher, get_service
+from tenant_service.api.deps import get_publisher, get_service, get_settings_service
 from tenant_service.events import (
     emit_tenant_archived,
     emit_tenant_created,
@@ -15,6 +15,8 @@ from tenant_service.events import (
 )
 from tenant_service.schemas import TenantCreate, TenantRead, TenantUpdate
 from tenant_service.service import TenantService
+from tenant_service.settings_schemas import TenantSettingsRead, TenantSettingsUpdate
+from tenant_service.settings_service import TenantSettingsService
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -80,3 +82,22 @@ async def restore_tenant(
     tenant = await svc.restore(tenant_id)
     await emit_tenant_restored(publisher, tenant, trace_id=get_trace_id() or "")
     return TenantRead.model_validate(tenant)
+
+
+@router.get("/{tenant_id}/settings", response_model=TenantSettingsRead)
+async def get_tenant_settings(
+    tenant_id: UUID,
+    svc: TenantSettingsService = Depends(get_settings_service),
+) -> TenantSettingsRead:
+    settings = await svc.get_or_create(tenant_id)
+    return TenantSettingsRead.model_validate(settings)
+
+
+@router.patch("/{tenant_id}/settings", response_model=TenantSettingsRead)
+async def update_tenant_settings(
+    tenant_id: UUID,
+    data: TenantSettingsUpdate,
+    svc: TenantSettingsService = Depends(get_settings_service),
+) -> TenantSettingsRead:
+    settings = await svc.update(tenant_id, data)
+    return TenantSettingsRead.model_validate(settings)

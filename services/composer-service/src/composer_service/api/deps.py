@@ -24,6 +24,7 @@ async def get_service(request: Request) -> AsyncIterator[ComposerService]:
             experiments_client=request.app.state.experiments_client,
             brief_client=request.app.state.brief_client,
             icp_client=request.app.state.icp_client,
+            tenant_client=request.app.state.tenant_client,
             template_registry=request.app.state.template_registry,
             personalizer=request.app.state.personalizer,
             fact_checker=request.app.state.fact_checker,

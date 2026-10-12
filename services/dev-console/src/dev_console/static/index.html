@@ -64,6 +64,7 @@
   <button data-tab="flows">Флоу</button>
   <button data-tab="revisions">Ревизии</button>
   <button data-tab="telegram">Telegram</button>
+  <button data-tab="linkedin">LinkedIn</button>
   <button data-tab="stoplist">Stop-list</button>
 </nav>
 <main>
@@ -102,6 +103,10 @@
   <div id="telegram" class="tab">
     <div id="telegramAccounts"></div>
     <div id="telegramAttempts" style="margin-top:16px"></div>
+  </div>
+  <div id="linkedin" class="tab">
+    <div id="linkedinAccounts"></div>
+    <div id="linkedinAttempts" style="margin-top:16px"></div>
   </div>
   <div id="stoplist" class="tab"><div id="stoplistList"></div></div>
 </main>
@@ -267,6 +272,7 @@ const TAB_TARGETS = {
 async function loadData(kind) {
   if (kind === 'analytics') { return loadAnalytics(); }
   if (kind === 'telegram') { return loadTelegram(); }
+  if (kind === 'linkedin') { return loadLinkedIn(); }
   const target = $(TAB_TARGETS[kind]);
   if (!target) return;
   if (!state.tenant) { target.innerHTML = '<div class="muted-empty">выберите тенант вверху</div>'; return; }
@@ -315,6 +321,28 @@ async function loadTelegram() {
   const a = await api(`/api/data/telegram-accounts?tenant=${encodeURIComponent(state.tenant)}`);
   const t = await api(`/api/data/telegram-attempts?tenant=${encodeURIComponent(state.tenant)}`);
   acc.innerHTML = '<h3 style="margin:8px 0">Аккаунты</h3>' + renderers.telegram(a.body);
+  att.innerHTML = '<h3 style="margin:8px 0">Отправки</h3>' + table(t.body || [], [
+    ['id', r => shortId(r.id)], ['status', r => r.status],
+    ['to', r => r.to_handle], ['error', r => r.error], ['sent', r => dt(r.sent_at)],
+  ]);
+}
+
+async function loadLinkedIn() {
+  const acc = $('linkedinAccounts');
+  const att = $('linkedinAttempts');
+  if (!state.tenant) {
+    acc.innerHTML = '<div class="muted-empty">выберите тенант вверху</div>';
+    att.innerHTML = '';
+    return;
+  }
+  acc.innerHTML = '<div class="muted-empty">загрузка…</div>';
+  att.innerHTML = '';
+  const a = await api(`/api/data/linkedin-accounts?tenant=${encodeURIComponent(state.tenant)}`);
+  const t = await api(`/api/data/linkedin-attempts?tenant=${encodeURIComponent(state.tenant)}`);
+  acc.innerHTML = '<h3 style="margin:8px 0">Аккаунты</h3>' + table(a.body || [], [
+    ['id', r => shortId(r.id)], ['email', r => r.email], ['status', r => r.status],
+    ['daily', r => r.daily_sent_today], ['proxy', r => r.proxy_url ? '✓' : '—'],
+  ]);
   att.innerHTML = '<h3 style="margin:8px 0">Отправки</h3>' + table(t.body || [], [
     ['id', r => shortId(r.id)], ['status', r => r.status],
     ['to', r => r.to_handle], ['error', r => r.error], ['sent', r => dt(r.sent_at)],

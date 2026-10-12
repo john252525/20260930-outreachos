@@ -51,6 +51,8 @@ class Subjects(StrEnum):
     FLOW_COMPLETED = "flow.completed"
     FLOW_FAILED = "flow.failed"
 
+    LINKEDIN_BAN_DETECTED = "linkedin.ban_detected"
+
     REVISION_PROPOSED = "revision.proposed"
     REVISION_APPROVED = "revision.approved"
     REVISION_REJECTED = "revision.rejected"
@@ -81,6 +83,7 @@ SUBJECT_TO_STREAM: dict[str, str] = {
     "analytics": "BRIEFS",
     "flow": "FLOWS",
     "revision": "FLOWS",
+    "linkedin": "FLOWS",
     "llm": "LLM_CALLS",
     "cost": "LLM_CALLS",
     "system": "SYSTEM",

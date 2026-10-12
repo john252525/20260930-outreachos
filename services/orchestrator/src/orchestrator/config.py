@@ -22,6 +22,9 @@ class Settings(BaseServiceSettings):
     review_queue_url: str = Field(default="http://review-queue:8000", alias="REVIEW_QUEUE_URL")
     contact_store_url: str = Field(default="http://contact-store:8000", alias="CONTACT_STORE_URL")
     brief_service_url: str = Field(default="http://brief-service:8000", alias="BRIEF_SERVICE_URL")
+    tenant_service_url: str = Field(
+        default="http://tenant-service:8000", alias="TENANT_SERVICE_URL"
+    )
     sender_email_url: str = Field(default="http://sender-email:8000", alias="SENDER_EMAIL_URL")
     revision_service_url: str = Field(
         default="http://auto-revision:8000", alias="REVISION_SERVICE_URL"

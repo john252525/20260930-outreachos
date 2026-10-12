@@ -37,7 +37,9 @@
 
 - **Спринт 4:** ✅ закрыт (reply-classifier + analytics-service + experiments-service).
 - **Спринт 5:** ✅ закрыт (orchestrator + auto-revision + telegram-sender).
-- **Спринт 6:** LinkedIn, WhatsApp (Business API), multi-armed bandit, ML-скоринг, web-UI, stage/prod, `cost-tracker`.
+- **Спринт 6:** ✅ закрыт (Web UI + LinkedIn + per-tenant settings + multi-region docs).
+- **Спринт 7:** WhatsApp (Business API), multi-armed bandit, ML-скоринг, users+roles в БД, campaign, audit log.
+- **Спринт 8:** multi-region (реализация).
 - **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
 - **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).
 - Stage/prod окружения, Prometheus+Grafana, Loki, backup Postgres, SOPS+age для секретов.
@@ -46,6 +48,10 @@
 - `analytics`: MV рефрешатся plain REFRESH (expression-индексы мешают CONCURRENTLY, ADR-018).
 - `orchestrator`/`experiments`: cross-tenant листинг тенантов через admin-DSN (ADR-017).
 - `telegram-sender`: MTProto-клиент подтягивается лениво; на dev — dry-run.
+- `linkedin-sender`: `linkedin-api` опционален (lazy); primary client в проде — Playwright-fallback (не реализован).
+- `require_service_token` (libs/common) не включён на сервисах (внутренние клиенты ещё не шлют токен).
+- Инвалидация кэша tenant settings — по TTL (событийная — follow-up).
+- Users в env (не БД) — до Спринта 7.
 
 ## Идеи (не обязательства)
 

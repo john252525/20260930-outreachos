@@ -11,6 +11,7 @@ from db.rls import set_tenant_context
 from db.session import async_session_factory
 from nats_client.publisher import Publisher
 from orchestrator.clients.icp_client import ICPClient
+from orchestrator.clients.tenant_client import TenantClient
 from orchestrator.config import Settings
 from orchestrator.errors import is_retryable
 from orchestrator.events import emit_flow_failed, emit_flow_started, emit_flow_step_completed
@@ -36,15 +37,19 @@ class BriefCompletedHandler(StepHandler):
     def __init__(
         self,
         icp_client: ICPClient,
+        tenant_client: TenantClient,
         publisher: Publisher,
         settings: Settings,
     ) -> None:
         self._icp = icp_client
+        self._tenant = tenant_client
         self._publisher = publisher
         self._settings = settings
 
     async def handle(self, envelope: EventEnvelope[Any]) -> None:
-        if not self._settings.auto_brief_to_icp:
+        tenant_settings = await self._tenant.get_settings(str(envelope.tenant_id))
+        auto = tenant_settings.get("auto_brief_to_icp", self._settings.auto_brief_to_icp)
+        if not auto:
             logger.info("brief_to_icp_skipped_manual_mode")
             return
 
@@ -60,9 +65,7 @@ class BriefCompletedHandler(StepHandler):
 
             existing = await repo.find_by_brief(tenant_id, brief_id)
             if existing is not None and existing.icp_id is not None:
-                logger.info(
-                    "flow_exists_for_brief", flow_id=str(existing.id), brief_id=brief_id
-                )
+                logger.info("flow_exists_for_brief", flow_id=str(existing.id), brief_id=brief_id)
                 # Reconcile a stuck step (e.g. after a retry that found the flow already done).
                 stuck = await repo.get_step(existing.id, self.step_name)
                 if stuck is not None and stuck.status in ("running", "retry_scheduled"):
@@ -101,10 +104,19 @@ class BriefCompletedHandler(StepHandler):
                     status="running",
                     brief_id=brief_id,
                     params={
-                        "sources": self._settings.default_sources,
-                        "limit_per_source": self._settings.default_limit_per_source,
-                        "channel": self._settings.default_channel,
-                        "auto_draft": self._settings.auto_contacts_to_drafts,
+                        "sources": tenant_settings.get("default_sources")
+                        or self._settings.default_sources,
+                        "limit_per_source": tenant_settings.get("default_limit_per_source")
+                        or self._settings.default_limit_per_source,
+                        "channel": tenant_settings.get("default_channel")
+                        or self._settings.default_channel,
+                        "auto_draft": tenant_settings.get(
+                            "auto_contacts_to_drafts", self._settings.auto_contacts_to_drafts
+                        ),
+                        "max_contacts_per_flow": tenant_settings.get(
+                            "default_max_contacts_per_flow"
+                        )
+                        or self._settings.default_max_contacts_per_flow,
                     },
                     current_step=self.step_name,
                     total_steps=TOTAL_STEPS,

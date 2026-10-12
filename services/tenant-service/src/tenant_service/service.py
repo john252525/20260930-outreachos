@@ -45,6 +45,14 @@ class TenantService:
             # Unique slug violation. RLS hides other tenants' rows from the
             # pre-check above, so the DB constraint is the source of truth.
             raise ConflictError(f"Tenant with slug '{data.slug}' already exists") from e
+        # Create default settings for the new tenant.
+        from db.types import generate_uuid7 as _uuid7
+        from tenant_service.models import TenantSettings
+
+        settings = TenantSettings(id=_uuid7(), tenant_id=tenant.id)
+        self._repo.session.add(settings)
+        await self._repo.session.flush()
+
         logger.info("tenant_created", tenant_id=str(tenant.id), slug=tenant.slug)
         return tenant
 

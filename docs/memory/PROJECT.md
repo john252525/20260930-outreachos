@@ -33,6 +33,7 @@
     авто-ревизия  auto-revision        analytics.alert -> диагноз (LLM) -> revision -> override+эксперимент
     каналы        sender-email (SMTP)  message.approved (email) -> message.sent
                   telegram-sender     message.approved (telegram) -> message.sent
+                  linkedin-sender     message.approved (linkedin) -> message.sent (риск!)
 
 Плюс `tenant-service` (проекты/тенанты) и `llm-gateway` (единая точка LLM) — инфраструктурные, используются всеми.
 
@@ -53,7 +54,8 @@
     services/        tenant-service, llm-gateway, brief-service, contact-store, icp-service,
                      sourcing-service, composer-service, review-queue, sender-email,
                      reply-classifier, analytics-service, experiments-service,
-                     orchestrator, auto-revision, telegram-sender, dev-console
+                     orchestrator, auto-revision, telegram-sender, linkedin-sender, dev-console
+apps/            web (Next.js UI + BFF proxy)
     infra/           docker-compose.dev.yml, postgres/init, nats/nats-server.conf
     scripts/         bootstrap, migrate, healthcheck, nats-cli, psql, redis-cli, logs, rebuild
     docs/            memory/, reference/, tasks/sprint-*/, architecture.md, contracts.md, infra.md

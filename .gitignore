@@ -23,3 +23,5 @@ logs/
 *.bak
 *.tmp
 .cache/
+node_modules/
+.next/

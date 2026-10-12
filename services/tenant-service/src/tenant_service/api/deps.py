@@ -10,6 +10,7 @@ from db.session import async_session_factory
 from nats_client.publisher import Publisher
 from tenant_service.repository import TenantRepository
 from tenant_service.service import TenantService
+from tenant_service.settings_service import TenantSettingsService
 
 
 async def get_service(request: Request) -> AsyncIterator[TenantService]:
@@ -24,3 +25,12 @@ async def get_service(request: Request) -> AsyncIterator[TenantService]:
 
 def get_publisher(request: Request) -> Publisher:
     return request.app.state.publisher  # type: ignore[no-any-return]
+
+
+async def get_settings_service(request: Request) -> AsyncIterator[TenantSettingsService]:
+    tenant_id = get_tenant_id()
+    session = async_session_factory()
+    async with session, session.begin():
+        if tenant_id is not None:
+            await set_tenant_context(session, tenant_id)
+        yield TenantSettingsService(session)

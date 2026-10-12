@@ -13,13 +13,14 @@ from common.middleware.errors import app_error_handler, unhandled_error_handler
 from common.middleware.idempotency import IdempotencyMiddleware
 from common.middleware.tenant import TenantMiddleware
 from common.middleware.trace import TraceMiddleware
-from common.redis import close_redis, init_redis
+from common.redis import close_redis, get_redis, init_redis
 from composer_service.api.routes import router as messages_router
 from composer_service.api.routes_templates import router as templates_router
 from composer_service.clients.brief_client import BriefClient
 from composer_service.clients.contact_store_client import ContactStoreClient
 from composer_service.clients.experiments_client import ExperimentsClient
 from composer_service.clients.icp_client import ICPClient
+from composer_service.clients.tenant_client import TenantClient
 from composer_service.config import Settings
 from composer_service.llm.client import LLMClient
 from composer_service.personalization.fact_checker import FactChecker
@@ -62,6 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.publisher = Publisher(nats_conn.js, producer=f"{settings.service_name}/0.1.0")
     app.state.contact_store = ContactStoreClient(settings.contact_store_url)
     app.state.experiments_client = ExperimentsClient(settings.experiments_service_url)
+    app.state.tenant_client = TenantClient(settings.tenant_service_url, get_redis())
     app.state.brief_client = BriefClient(settings.brief_service_url)
     app.state.icp_client = ICPClient(settings.icp_service_url)
     app.state.llm = llm
@@ -78,6 +80,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         await app.state.contact_store.close()
         await app.state.experiments_client.close()
+        await app.state.tenant_client.close()
         await app.state.brief_client.close()
         await app.state.icp_client.close()
         await llm.close()

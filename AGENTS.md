@@ -5,7 +5,7 @@
 
 ## Быстрый старт (TL;DR)
 
-- **Статус:** Спринты 0–5 закрыты (0,1,2A-C,3A-C,4A-C,5A-C). Следующий — **Спринт 6** (LinkedIn, WhatsApp, bandit, ML-скоринг, UI, prod).
+- **Статус:** Спринты 0–6 закрыты (0,1,2A-C,3A-C,4A-C,5A-C,6A-D). Есть Web UI (Next.js) + LinkedIn + per-tenant settings. Следующий — **Спринт 7** (WhatsApp, bandit, ML, users, audit).
   Актуальное состояние — в `docs/memory/STATE.md`.
 - **Стек:** Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - **uv** лежит локально: `export PATH="$PWD/.tools:$PATH"`.

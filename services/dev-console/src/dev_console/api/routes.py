@@ -23,6 +23,7 @@ SERVICE_NAMES = [
     "orchestrator",
     "auto-revision",
     "telegram-sender",
+    "linkedin-sender",
 ]
 
 
@@ -286,5 +287,40 @@ async def data_telegram_attempts(
     proxy = request.app.state.proxy
     status, body = await proxy.get(
         "telegram-sender", "/attempts", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/linkedin-accounts")
+async def data_linkedin_accounts(
+    request: Request,
+    tenant: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get("linkedin-sender", "/accounts", tenant_id=tenant)
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/linkedin-attempts")
+async def data_linkedin_attempts(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "linkedin-sender", "/attempts", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/tenant-settings")
+async def data_tenant_settings(
+    request: Request,
+    tenant: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "tenant-service", f"/tenants/{tenant}/settings", tenant_id=tenant
     )
     return JSONResponse(content=body, status_code=status)

@@ -1,14 +1,14 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-12 (iter 011 — Спринт 5: orchestrator + auto-revision + telegram)
+> Последнее обновление: 2026-10-12 (iter 012 — Спринт 6: Web UI + LinkedIn + per-tenant settings + multi-region docs)
 
 ## TL;DR для нового агента
 
 - Платформа **Outreach OS** — мульти-тенантный outreach из API-first микросервисов.
-- **Спринты 0–5 закрыты** (0, 1, 2A/2B/2C, 3A/3B/3C, 4A/4B/4C, 5A/5B/5C). Система самоуправляемая
+- **Спринты 0–6 закрыты** (0, 1, 2A/2B/2C, 3A/3B/3C, 4A/4B/4C, 5A/5B/5C). Система самоуправляемая
   (brief → ICP → sourcing → drafts → review → send → reply → analytics → A/B → auto-revision) + 2 канала (email + Telegram).
-  Следующий — **Спринт 6** (LinkedIn, WhatsApp, bandit, ML-скоринг, UI, prod).
+  Следующий — **Спринт 7** (WhatsApp, bandit, ML-скоринг, users+roles, audit log).
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
@@ -134,6 +134,26 @@
 - **Новые subjects:** `flow.*`, `revision.*` (стрим FLOWS); bootstrap NATS до-писывает стримы.
 - **dev-console:** вкладки Флоу / Ревизии / Telegram; Swagger-прокси `/docs/{service}`.
 
+
+### Спринт 6 — Web UI + LinkedIn + per-tenant settings + multi-region docs ✅
+- **6A Web UI** (`apps/web`, Next.js 15 App Router, порт 48117): Auth.js (credentials+JWT,
+  `AUTH_USERS` в env), BFF-прокси `/api/proxy/<service>/<path>` (SERVICE_TOKEN не утекает в браузер).
+  Страницы: login, dashboard (KPI+funnel+flows), reviews (+detail, approve/reject/edit),
+  flows (+detail, pause/resume/cancel), analytics (overview/categories/senders/templates),
+  experiments, revisions (approve), messages, settings. Tailwind + shadcn-подобные UI-компоненты.
+- **6B `linkedin-sender`** (порт 48118): таблицы `linkedin_accounts` / `linkedin_send_attempts`
+  (RLS+FORCE). Fernet-шифрование, residential-proxy, warm-up (5→20/день), `linkedin-api` (lazy) с
+  dry-run, captcha→ручное решение (`/solve-captcha`), ban→событие `linkedin.ban_detected`.
+  **Двойной opt-in:** глобальный `LINKEDIN_ENABLED` + per-tenant `linkedin_enabled`;
+  **connection check** (`messengers.linkedin.is_connected`). Dry-run по умолчанию.
+- **6C Per-tenant settings**: таблица `tenant_settings` в tenant-service (RLS, авто-создание при
+  создании tenant). API `GET/PATCH /tenants/{id}/settings`. Кэш в Redis (5 мин).
+  Интегрировано: orchestrator (флаги auto_* + sources/limits), composer (channel enabled),
+  linkedin-sender (opt-in). `require_service_token` в `libs/common` (opt-in enforcement).
+- **6D Multi-region groundwork**: `docs/multi-region.md` + `docs/runbook-multi-region.md`
+  (модель данных, репликация, роутинг, миграция tenant, failover). Реализация — Спринт 8.
+- **dev-console:** вкладка LinkedIn; BFF-совместимые data-эндпоинты для settings/telegram/linkedin.
+
 ### Dev-console ✅
 - `services/dev-console` (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы
   компаний/контактов/брифов/ICP/поисков/писем/ревью/stop-list. Проксирует API + читает JetStream (read-only).
@@ -146,7 +166,8 @@
 - (нет)
 
 ## Далее (Next)
-- **Спринт 6**: LinkedIn sender, WhatsApp (Business API), multi-armed bandit, ML-скоринг контактов, web-UI, stage/prod.
+- **Спринт 7**: WhatsApp sender, multi-armed bandit, ML-скоринг, users+roles в БД, campaign entity, audit log.
+- **Спринт 8**: реализация multi-region (см. `docs/multi-region.md`).
 - Позже: Telegram/WhatsApp sender (3D), LinkedIn (3E), зарубежные OSINT-источники (2D), stage/prod окружения.
 
 ## Блокеры
@@ -173,6 +194,8 @@
 | orchestrator | 48114 | 8000 |
 | auto-revision | 48115 | 8000 |
 | telegram-sender | 48116 | 8000 |
+| web (Next.js) | 48117 | 3000 |
+| linkedin-sender | 48118 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |

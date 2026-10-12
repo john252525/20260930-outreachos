@@ -42,6 +42,9 @@ class Settings(BaseServiceSettings):
     telegram_sender_url: str = Field(
         default="http://telegram-sender:8000", alias="TELEGRAM_SENDER_URL"
     )
+    linkedin_sender_url: str = Field(
+        default="http://linkedin-sender:8000", alias="LINKEDIN_SENDER_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 

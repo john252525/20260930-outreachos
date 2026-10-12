@@ -17,7 +17,7 @@ from common.middleware.errors import app_error_handler, unhandled_error_handler
 from common.middleware.idempotency import IdempotencyMiddleware
 from common.middleware.tenant import TenantMiddleware
 from common.middleware.trace import TraceMiddleware
-from common.redis import close_redis, init_redis
+from common.redis import close_redis, get_redis, init_redis
 from contracts.base import EventEnvelope
 from db.session import dispose_engine, init_engine
 from nats_client.client import NATSConnection
@@ -29,6 +29,7 @@ from orchestrator.clients.contact_store_client import ContactStoreClient
 from orchestrator.clients.icp_client import ICPClient
 from orchestrator.clients.review_queue_client import ReviewQueueClient, RevisionClient
 from orchestrator.clients.sourcing_client import SourcingClient
+from orchestrator.clients.tenant_client import TenantClient
 from orchestrator.config import Settings
 from orchestrator.db_admin import dispose_admin_engine, init_admin_engine
 from orchestrator.handlers.analytics_alert import AnalyticsAlertHandler
@@ -87,6 +88,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     contact_store = ContactStoreClient(settings.contact_store_url)
     review_queue = ReviewQueueClient(settings.review_queue_url)
     revision_client = RevisionClient(settings.revision_service_url)
+    tenant_client = TenantClient(settings.tenant_service_url, get_redis())
 
     app.state.icp_client = icp_client
     app.state.sourcing_client = sourcing_client
@@ -94,10 +96,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.contact_store = contact_store
     app.state.review_queue = review_queue
     app.state.revision_client = revision_client
+    app.state.tenant_client = tenant_client
 
     router = EventRouter()
-    router.register(BriefCompletedHandler(icp_client, publisher, settings))
-    router.register(ICPGeneratedHandler(icp_client, sourcing_client, publisher, settings))
+    router.register(BriefCompletedHandler(icp_client, tenant_client, publisher, settings))
+    router.register(
+        ICPGeneratedHandler(icp_client, sourcing_client, tenant_client, publisher, settings)
+    )
     router.register(ContactsFoundHandler(composer, contact_store, icp_client, publisher, settings))
     router.register(MessageDraftedHandler())
     router.register(MessageApprovedHandler())
@@ -150,6 +155,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await contact_store.close()
         await review_queue.close()
         await revision_client.close()
+        await tenant_client.close()
         await nats_conn.close()
         await close_redis()
         await dispose_admin_engine()

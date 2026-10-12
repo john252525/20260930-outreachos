@@ -180,3 +180,52 @@ composer (`message.drafted`) → review-queue (`message.approved`/`message.rejec
 **Последствия:** пайплайн работает автономно; состояние каждой цепочки наблюдаемо (`/flows`, `/stats`,
 `/metrics`). Событийные payload'ы сохраняются в `flow_steps.input_data` для переигрывания.
 
+## ADR-020: Web UI — BFF-прокси с SERVICE_TOKEN (opt-in enforcement)
+
+**Контекст:** браузер не должен ходить в микросервисы напрямую (секреты, CORS, агрегация).
+Нужен аутентифицированный доступ к сервисам от имени пользователя.
+
+**Решение:**
+- Next.js (App Router, RSC) выступает BFF: `/api/proxy/<service>/<path>` проксирует запросы,
+  подставляя `X-Tenant-ID` и `X-User-Id` из серверной JWT-сессии и `Authorization: Bearer <SERVICE_TOKEN>`.
+- `SERVICE_TOKEN` живёт только на сервере (env web-контейнера), в браузер не попадает.
+- Сервисная аутентификация реализована в `libs/common/auth.py` (`require_service_token`).
+  Проверка **opt-in**: если `SERVICE_TOKEN` не задан в окружении сервиса — это no-op (dev).
+- На dev `SERVICE_TOKEN` не включается на сервисах: внутренние вызовы сервис→сервис
+  (или orchestrator→icp/composer/…, composer→contact-store/…) пока не передают токен.
+- Перед включением enforcement в prod: **все** внутренние HTTP-клиенты должны слать
+  `Authorization: Bearer <SERVICE_TOKEN>` (follow-up в BACKLOG).
+
+**Последствия:** на dev токен передаётся BFF→сервисы, но не проверяется (безопасно и не ломает
+внутренние вызовы). В prod включение токена — после добавления его во внутренние клиенты.
+
+## ADR-021: LinkedIn sender — двойной opt-in, connection check, captcha → ручное решение
+
+**Контекст:** LinkedIn — самый рискованный канал (агрессивные баны, ToS-нарушение, юридические риски).
+
+**Решение:**
+- **Двойной opt-in:** глобальный `LINKEDIN_ENABLED` (kill-switch) **и** per-tenant `linkedin_enabled`.
+  По умолчанию оба выключены.
+- **Connection check обязателен:** сообщение уходит только если у контакта
+  `messengers.linkedin.is_connected == true` (принятый connection request).
+- **Captcha/ban → не обходим автоматически:** аккаунт помечается `captcha_required` / `banned`,
+  публикуется `linkedin.ban_detected`; человек решает через `/solve-captcha`.
+- **Residential proxy обязателен**, один аккаунт = один IP. Warm-up 5→20/день за ~месяц.
+- **Клиент абстрагирован:** dry-run (по умолчанию) / `linkedin-api` (unofficial, lazy).
+  Playwright-fallback возможен как расширение.
+
+**Последствия:** LinkedIn включается осознанно; на dev — только dry-run. Секреты шифруются Fernet.
+
+## ADR-022: Per-tenant settings — defaults в коде, кэш в Redis, авто-создание
+
+**Контекст:** до Спринта 6 флаги автоматизации были глобальны (env). Нужны per-tenant настройки.
+
+**Решение:**
+- Таблица `tenant_settings` (RLS+FORCE), **дефолты в коде** (не в БД); запись создаётся лениво
+  (`get_or_create`) и при создании tenant.
+- Чтение сервисами — через `TenantClient.get_settings` с кэшем в Redis (TTL 300с).
+- Инвалидация — по TTL (событийная инвалидация — follow-up).
+- Интеграция: orchestrator (auto_* + sources/limits), composer (channel enabled), linkedin (opt-in).
+
+**Последствия:** один tenant — auto, другой — manual, без пересборки. Кэш снимает нагрузку с tenant-service.
+

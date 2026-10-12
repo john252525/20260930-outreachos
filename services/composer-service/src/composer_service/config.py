@@ -14,6 +14,9 @@ class Settings(BaseServiceSettings):
     experiments_service_url: str = Field(
         default="http://experiments-service:8000", alias="EXPERIMENTS_SERVICE_URL"
     )
+    tenant_service_url: str = Field(
+        default="http://tenant-service:8000", alias="TENANT_SERVICE_URL"
+    )
 
     # LLM
     llm_model: str = Field(default="deepseek-flash", alias="COMPOSER_LLM_MODEL")

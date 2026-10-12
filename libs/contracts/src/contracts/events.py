@@ -285,6 +285,12 @@ class RevisionSnapshot(BaseModel):
     trigger_type: str = ""
 
 
+class LinkedInBanDetectedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    account_id: UUID
+    reason: str = ""
+
+
 class RevisionProposedPayload(BaseModel):
     model_config = ConfigDict(extra="ignore")
     revision: RevisionSnapshot
@@ -369,6 +375,7 @@ EVENT_PAYLOAD_MAP: dict[str, type[BaseModel]] = {
     "revision.proposed": RevisionProposedPayload,
     "revision.approved": RevisionApprovedPayload,
     "revision.rejected": RevisionRejectedPayload,
+    "linkedin.ban_detected": LinkedInBanDetectedPayload,
     "experiment.created": ExperimentCreatedPayload,
     "experiment.variant_won": ExperimentVariantWonPayload,
     "llm.called": LLMCalledPayload,

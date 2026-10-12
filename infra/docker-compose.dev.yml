@@ -202,6 +202,7 @@ services:
       ORCHESTRATOR_URL: http://orchestrator:8000
       AUTO_REVISION_URL: http://auto-revision:8000
       TELEGRAM_SENDER_URL: http://telegram-sender:8000
+      LINKEDIN_SENDER_URL: http://linkedin-sender:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -287,6 +288,7 @@ services:
       ICP_SERVICE_URL: http://icp-service:8000
       LLM_GATEWAY_URL: http://llm-gateway:8000
       EXPERIMENTS_SERVICE_URL: http://experiments-service:8000
+      TENANT_SERVICE_URL: http://tenant-service:8000
       COMPOSER_LLM_MODEL: ${COMPOSER_LLM_MODEL:-deepseek-flash}
       COMPOSER_STRICT_FACT_CHECK: ${COMPOSER_STRICT_FACT_CHECK:-true}
     ports:
@@ -446,6 +448,7 @@ services:
       BRIEF_SERVICE_URL: http://brief-service:8000
       SENDER_EMAIL_URL: http://sender-email:8000
       REVISION_SERVICE_URL: http://auto-revision:8000
+      TENANT_SERVICE_URL: http://tenant-service:8000
       ORCH_AUTO_BRIEF_TO_ICP: ${ORCH_AUTO_BRIEF_TO_ICP:-true}
       ORCH_AUTO_ICP_TO_SOURCING: ${ORCH_AUTO_ICP_TO_SOURCING:-true}
       ORCH_AUTO_CONTACTS_TO_DRAFTS: ${ORCH_AUTO_CONTACTS_TO_DRAFTS:-false}
@@ -515,6 +518,67 @@ services:
       TELEGRAM_DRY_RUN: ${TELEGRAM_DRY_RUN:-true}
     ports:
       - "0.0.0.0:${TELEGRAM_SENDER_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      composer-service: {condition: service_started}
+
+  web:
+    <<: *service-defaults
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: outreach-os-web
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      NEXTAUTH_URL: http://localhost:${WEB_PORT}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-devsecret}
+      AUTH_TRUST_HOST: "true"
+      SERVICE_TOKEN: ${WEB_SERVICE_TOKEN:-}
+      AUTH_USERS: ${AUTH_USERS:-}
+      ORCHESTRATOR_URL: http://orchestrator:8000
+      REVIEW_QUEUE_URL: http://review-queue:8000
+      COMPOSER_URL: http://composer-service:8000
+      ANALYTICS_URL: http://analytics-service:8000
+      EXPERIMENTS_URL: http://experiments-service:8000
+      REVISION_URL: http://auto-revision:8000
+      ICP_URL: http://icp-service:8000
+      BRIEF_URL: http://brief-service:8000
+      SOURCING_URL: http://sourcing-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      TENANT_URL: http://tenant-service:8000
+    ports:
+      - "0.0.0.0:${WEB_PORT}:3000"
+    depends_on:
+      orchestrator: {condition: service_started}
+      review-queue: {condition: service_started}
+      tenant-service: {condition: service_started}
+
+  linkedin-sender:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/linkedin-sender/Dockerfile
+    container_name: outreach-os-linkedin-sender
+    environment:
+      SERVICE_NAME: linkedin-sender
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/15
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      TENANT_SERVICE_URL: http://tenant-service:8000
+      LINKEDIN_ENCRYPTION_KEY: ${LINKEDIN_ENCRYPTION_KEY:?required}
+      LINKEDIN_DRY_RUN: ${LINKEDIN_DRY_RUN:-true}
+      LINKEDIN_ENABLED: ${LINKEDIN_ENABLED:-false}
+    ports:
+      - "0.0.0.0:${LINKEDIN_SENDER_PORT}:8000"
     depends_on:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}

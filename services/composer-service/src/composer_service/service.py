@@ -11,6 +11,7 @@ from composer_service.clients.brief_client import BriefClient
 from composer_service.clients.contact_store_client import ContactStoreClient
 from composer_service.clients.experiments_client import ExperimentsClient
 from composer_service.clients.icp_client import ICPClient
+from composer_service.clients.tenant_client import TenantClient
 from composer_service.config import Settings
 from composer_service.events import emit_message_drafted
 from composer_service.models import Message, TemplateOverride
@@ -38,6 +39,7 @@ class ComposerService:
         experiments_client: ExperimentsClient,
         brief_client: BriefClient,
         icp_client: ICPClient,
+        tenant_client: TenantClient,
         override_repo: TemplateOverrideRepository,
         template_registry: TemplateRegistry,
         personalizer: Personalizer,
@@ -50,6 +52,7 @@ class ComposerService:
         self._experiments = experiments_client
         self._brief = brief_client
         self._icp = icp_client
+        self._tenant = tenant_client
         self._override_repo = override_repo
         self._templates = template_registry
         self._personalizer = personalizer
@@ -69,6 +72,16 @@ class ComposerService:
         return payload
 
     async def draft(self, *, tenant_id: UUID, data: DraftRequest, trace_id: str) -> Message:
+        tenant_settings = await self._tenant.get_settings(str(tenant_id))
+        channel_flag = {
+            "email": "email_enabled",
+            "telegram": "telegram_enabled",
+            "linkedin": "linkedin_enabled",
+            "whatsapp": "whatsapp_enabled",
+        }.get(data.channel)
+        if channel_flag and tenant_settings and not tenant_settings.get(channel_flag, True):
+            raise ValidationError(f"Channel '{data.channel}' is disabled for this tenant")
+
         contact = self._unwrap(
             await self._contact_store.get_contact(
                 data.contact_id, tenant_id=str(tenant_id), trace_id=trace_id

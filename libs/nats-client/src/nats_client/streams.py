@@ -47,7 +47,7 @@ STREAMS: list[StreamConfig] = [
     ),
     StreamConfig(
         name="FLOWS",
-        subjects=["flow.>", "revision.>"],
+        subjects=["flow.>", "revision.>", "linkedin.>"],
         max_age_seconds=30 * 24 * 3600,
         max_bytes=128 * 1024 * 1024,
     ),

@@ -12,6 +12,7 @@ from db.session import async_session_factory
 from nats_client.publisher import Publisher
 from orchestrator.clients.icp_client import ICPClient
 from orchestrator.clients.sourcing_client import SourcingClient
+from orchestrator.clients.tenant_client import TenantClient
 from orchestrator.config import Settings
 from orchestrator.events import emit_flow_step_completed
 from orchestrator.handlers.base import StepHandler, complete_step, start_step
@@ -29,16 +30,20 @@ class ICPGeneratedHandler(StepHandler):
         self,
         icp_client: ICPClient,
         sourcing_client: SourcingClient,
+        tenant_client: TenantClient,
         publisher: Publisher,
         settings: Settings,
     ) -> None:
         self._icp = icp_client
         self._sourcing = sourcing_client
+        self._tenant = tenant_client
         self._publisher = publisher
         self._settings = settings
 
     async def handle(self, envelope: EventEnvelope[Any]) -> None:
-        if not self._settings.auto_icp_to_sourcing:
+        tenant_settings = await self._tenant.get_settings(str(envelope.tenant_id))
+        auto = tenant_settings.get("auto_icp_to_sourcing", self._settings.auto_icp_to_sourcing)
+        if not auto:
             return
 
         icp_payload = getattr(envelope.payload, "icp", None)
