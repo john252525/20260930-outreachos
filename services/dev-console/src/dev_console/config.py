@@ -37,6 +37,11 @@ class Settings(BaseServiceSettings):
     experiments_service_url: str = Field(
         default="http://experiments-service:8000", alias="EXPERIMENTS_SERVICE_URL"
     )
+    orchestrator_url: str = Field(default="http://orchestrator:8000", alias="ORCHESTRATOR_URL")
+    auto_revision_url: str = Field(default="http://auto-revision:8000", alias="AUTO_REVISION_URL")
+    telegram_sender_url: str = Field(
+        default="http://telegram-sender:8000", alias="TELEGRAM_SENDER_URL"
+    )
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 

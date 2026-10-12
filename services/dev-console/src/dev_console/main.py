@@ -58,6 +58,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "reply-classifier": settings.reply_classifier_url,
             "analytics-service": settings.analytics_service_url,
             "experiments-service": settings.experiments_service_url,
+            "orchestrator": settings.orchestrator_url,
+            "auto-revision": settings.auto_revision_url,
+            "telegram-sender": settings.telegram_sender_url,
         }
     )
     nc = await nats.connect(settings.nats_url, name=settings.service_name)

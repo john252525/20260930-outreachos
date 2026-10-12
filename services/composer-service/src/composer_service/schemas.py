@@ -98,3 +98,30 @@ class TemplateInfo(BaseModel):
     template_id: str
     template_version: str
     channel: str
+
+
+class TemplateOverrideCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    template_id: str
+    base_version: str = "v1"
+    override_version: str
+    system_prompt: str
+    user_prompt_template: str
+    source_revision_id: UUID | None = None
+    is_active: bool = True
+
+
+class TemplateOverrideRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+    id: UUID
+    tenant_id: UUID
+    template_id: str
+    base_version: str
+    override_version: str
+    system_prompt: str
+    user_prompt_template: str
+    is_active: bool
+    created_by: str
+    source_revision_id: UUID | None
+    created_at: datetime
+    updated_at: datetime

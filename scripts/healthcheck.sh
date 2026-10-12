@@ -28,5 +28,8 @@ check "sender-email"    "http://127.0.0.1:${SENDER_EMAIL_PORT}/healthz"
 check "reply-classifier" "http://127.0.0.1:${REPLY_CLASSIFIER_PORT}/healthz"
 check "analytics-service" "http://127.0.0.1:${ANALYTICS_SERVICE_PORT}/healthz"
 check "experiments-service" "http://127.0.0.1:${EXPERIMENTS_SERVICE_PORT}/healthz"
+check "orchestrator" "http://127.0.0.1:${ORCHESTRATOR_PORT}/healthz"
+check "auto-revision" "http://127.0.0.1:${REVISION_SERVICE_PORT}/healthz"
+check "telegram-sender" "http://127.0.0.1:${TELEGRAM_SENDER_PORT}/healthz"
 check "nats-monitor"   "http://127.0.0.1:${NATS_MONITOR_PORT}/healthz"
 [[ $FAILED -eq 0 ]] || exit 1

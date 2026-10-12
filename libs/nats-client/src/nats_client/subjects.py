@@ -46,6 +46,15 @@ class Subjects(StrEnum):
 
     ANALYTICS_ALERT = "analytics.alert"
 
+    FLOW_STARTED = "flow.started"
+    FLOW_STEP_COMPLETED = "flow.step_completed"
+    FLOW_COMPLETED = "flow.completed"
+    FLOW_FAILED = "flow.failed"
+
+    REVISION_PROPOSED = "revision.proposed"
+    REVISION_APPROVED = "revision.approved"
+    REVISION_REJECTED = "revision.rejected"
+
     LLM_CALLED = "llm.called"
     COST_RECORDED = "cost.recorded"
 
@@ -70,6 +79,8 @@ SUBJECT_TO_STREAM: dict[str, str] = {
     "reply": "BRIEFS",
     "experiment": "BRIEFS",
     "analytics": "BRIEFS",
+    "flow": "FLOWS",
+    "revision": "FLOWS",
     "llm": "LLM_CALLS",
     "cost": "LLM_CALLS",
     "system": "SYSTEM",

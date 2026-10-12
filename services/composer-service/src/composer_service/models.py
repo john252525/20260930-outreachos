@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -79,4 +80,26 @@ class Message(
         Index("ix_messages_tenant_contact", "tenant_id", "contact_id"),
         Index("ix_messages_tenant_channel", "tenant_id", "channel"),
         Index("ix_messages_tenant_created", "tenant_id", "created_at"),
+    )
+
+
+class TemplateOverride(Base, UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin):
+    """Auto-revision override for a template (data-driven prompt)."""
+
+    __tablename__ = "template_overrides"
+
+    template_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    base_version: Mapped[str] = mapped_column(String(16), nullable=False)
+    override_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    user_prompt_template: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    created_by: Mapped[str] = mapped_column(String(128), nullable=False, default="auto-revision")
+    source_revision_id: Mapped[UUID | None] = mapped_column(nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "template_id", "override_version", name="uq_template_override"
+        ),
+        Index("ix_template_overrides_tenant_active", "tenant_id", "template_id", "is_active"),
     )

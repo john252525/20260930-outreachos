@@ -36,13 +36,16 @@
 ## Отложено (Next / Later)
 
 - **Спринт 4:** ✅ закрыт (reply-classifier + analytics-service + experiments-service).
-- **Спринт 5:** orchestrator, auto-revision, `cost-tracker`, Telegram/WhatsApp senders.
+- **Спринт 5:** ✅ закрыт (orchestrator + auto-revision + telegram-sender).
+- **Спринт 6:** LinkedIn, WhatsApp (Business API), multi-armed bandit, ML-скоринг, web-UI, stage/prod, `cost-tracker`.
 - **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
 - **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).
 - Stage/prod окружения, Prometheus+Grafana, Loki, backup Postgres, SOPS+age для секретов.
 - IMAP-poller в sender-email: код не реализован (только dry-run отправка). Reply detection доставляется
   событием `reply.received`; полноценный IMAP-поллер — позже.
 - `analytics`: MV рефрешатся plain REFRESH (expression-индексы мешают CONCURRENTLY, ADR-018).
+- `orchestrator`/`experiments`: cross-tenant листинг тенантов через admin-DSN (ADR-017).
+- `telegram-sender`: MTProto-клиент подтягивается лениво; на dev — dry-run.
 
 ## Идеи (не обязательства)
 

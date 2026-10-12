@@ -12,9 +12,10 @@
 
 ## Статус
 
-**Спринты 0, 1, 2A, 2B, 2C, 3 (3A/3B/3C) и 4 (4A/4B/4C) закрыты.** Полный цикл работает end-to-end
-(Brief → ICP → Sourcing → Composer → Review → Sender в dry-run → Reply-classifier → Analytics → A/B).
-Следующий — Спринт 5 (orchestrator + auto-revision + Telegram/WhatsApp).
+**Спринты 0–5 закрыты.** Платформа самоуправляемая и мультиканальная:
+Brief → ICP → Sourcing → Composer → Review → Sender (email+Telegram, dry-run) → Reply-classifier →
+Analytics → A/B → auto-revision. Orchestrator связывает шаги через события.
+Следующий — Спринт 6 (LinkedIn, WhatsApp, bandit, ML-скоринг, UI, prod).
 Актуальный статус — в [`docs/memory/STATE.md`](docs/memory/STATE.md).
 
 Сервисы: `tenant-service`, `llm-gateway`, `brief-service`, `contact-store`, `icp-service`,

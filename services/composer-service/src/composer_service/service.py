@@ -13,12 +13,17 @@ from composer_service.clients.experiments_client import ExperimentsClient
 from composer_service.clients.icp_client import ICPClient
 from composer_service.config import Settings
 from composer_service.events import emit_message_drafted
-from composer_service.models import Message
+from composer_service.models import Message, TemplateOverride
+from composer_service.overrides import TemplateOverrideRepository, render_override
 from composer_service.personalization.fact_checker import FactChecker
 from composer_service.personalization.personalizer import Personalizer
 from composer_service.repository import MessageRepository
-from composer_service.schemas import DraftRequest, MessageUpdate
-from composer_service.templates.base import TemplateContext
+from composer_service.schemas import (
+    DraftRequest,
+    MessageUpdate,
+    TemplateOverrideCreate,
+)
+from composer_service.templates.base import RenderedTemplate, TemplateContext
 from composer_service.templates.registry import TemplateRegistry
 from nats_client.publisher import Publisher
 
@@ -33,6 +38,7 @@ class ComposerService:
         experiments_client: ExperimentsClient,
         brief_client: BriefClient,
         icp_client: ICPClient,
+        override_repo: TemplateOverrideRepository,
         template_registry: TemplateRegistry,
         personalizer: Personalizer,
         fact_checker: FactChecker,
@@ -44,6 +50,7 @@ class ComposerService:
         self._experiments = experiments_client
         self._brief = brief_client
         self._icp = icp_client
+        self._override_repo = override_repo
         self._templates = template_registry
         self._personalizer = personalizer
         self._fact_checker = fact_checker
@@ -145,6 +152,20 @@ class ComposerService:
             ),
         )
         rendered = template.render(context)
+
+        override = await self._override_repo.get_active(
+            tenant_id=tenant_id, template_id=template.template_id
+        )
+        if override is not None:
+            override_version = override.override_version
+            rendered = RenderedTemplate(
+                system_prompt=override.system_prompt,
+                user_prompt=render_override(override.user_prompt_template, rendered.variables_used),
+                subject_hint=rendered.subject_hint,
+                required_mentions=rendered.required_mentions,
+                forbidden_phrases=rendered.forbidden_phrases,
+                variables_used={**rendered.variables_used, "template_override": override_version},
+            )
 
         subject, body, template_warnings = await self._personalizer.generate(
             tenant_id=str(tenant_id),
@@ -254,7 +275,7 @@ class ComposerService:
             raise NotFoundError(f"Message {message_id} not found")
         return m
 
-    async def list(self, *, tenant_id: UUID, **kwargs: Any) -> list[Message]:
+    async def list_messages(self, *, tenant_id: UUID, **kwargs: Any) -> list[Message]:
         return await self._repo.list(tenant_id=tenant_id, **kwargs)
 
     def _build_recipient_snapshot(
@@ -278,6 +299,40 @@ class ComposerService:
             "position": self._fact_value(contact.get("position")),
             "company_name": self._fact_value((company or {}).get("name")),
         }
+
+    async def list_overrides(self, *, tenant_id: UUID) -> list[TemplateOverride]:
+        return await self._override_repo.list_all(tenant_id=tenant_id)
+
+    async def create_override(
+        self, *, tenant_id: UUID, data: TemplateOverrideCreate
+    ) -> TemplateOverride:
+        override = TemplateOverride(
+            tenant_id=tenant_id,
+            template_id=data.template_id,
+            base_version=data.base_version,
+            override_version=data.override_version,
+            system_prompt=data.system_prompt,
+            user_prompt_template=data.user_prompt_template,
+            source_revision_id=data.source_revision_id,
+            is_active=data.is_active,
+        )
+        if data.is_active:
+            await self._override_repo.add(override)
+        else:
+            self._override_repo.session.add(override)
+            await self._override_repo.session.flush()
+        await self._override_repo.session.refresh(override)
+        return override
+
+    async def set_override_active(
+        self, *, tenant_id: UUID, override_id: UUID, is_active: bool
+    ) -> TemplateOverride | None:
+        override = await self._override_repo.set_active(
+            tenant_id=tenant_id, override_id=override_id, is_active=is_active
+        )
+        if override is not None:
+            await self._override_repo.session.refresh(override)
+        return override
 
     def _to_html(self, body: str, signature: str | None) -> str:
         safe = html_lib.escape(body)

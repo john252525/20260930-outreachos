@@ -15,6 +15,7 @@ from common.middleware.tenant import TenantMiddleware
 from common.middleware.trace import TraceMiddleware
 from common.redis import close_redis, init_redis
 from composer_service.api.routes import router as messages_router
+from composer_service.api.routes_templates import router as templates_router
 from composer_service.clients.brief_client import BriefClient
 from composer_service.clients.contact_store_client import ContactStoreClient
 from composer_service.clients.experiments_client import ExperimentsClient
@@ -98,6 +99,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(messages_router)
+    app.include_router(templates_router)
 
     return app
 

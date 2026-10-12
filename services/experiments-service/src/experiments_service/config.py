@@ -7,6 +7,8 @@ from common.config import BaseServiceSettings
 
 class Settings(BaseServiceSettings):
     service_name: str = Field(default="experiments-service", alias="SERVICE_NAME")
+
+    database_url_admin: str = Field(default="", alias="DATABASE_URL_ADMIN")
     analytics_service_url: str = Field(
         default="http://analytics-service:8000", alias="ANALYTICS_SERVICE_URL"
     )

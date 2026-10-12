@@ -21,6 +21,11 @@ from db.session import async_session_factory, dispose_engine, init_engine
 from experiments_service.api.routes import router as experiments_router
 from experiments_service.clients.analytics_client import AnalyticsClient
 from experiments_service.config import Settings
+from experiments_service.db_admin import (
+    admin_session_factory,
+    dispose_admin_engine,
+    init_admin_engine,
+)
 from experiments_service.repository import ExperimentRepository
 from experiments_service.service import ExperimentService
 from nats_client.client import NATSConnection
@@ -37,6 +42,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(level=settings.log_level, service_name=settings.service_name)
 
     init_engine(settings.database_url)
+    if settings.database_url_admin:
+        init_admin_engine(settings.database_url_admin)
     init_redis(settings.redis_url)
 
     nats_conn = NATSConnection(settings.nats_url, name=settings.service_name)
@@ -57,6 +64,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await app.state.analytics.close()
         await nats_conn.close()
         await close_redis()
+        await dispose_admin_engine()
         await dispose_engine()
         logger.info("service_stopped")
 
@@ -66,7 +74,8 @@ async def _evaluate_loop(app: FastAPI, settings: Settings) -> None:
         return
     while True:
         try:
-            async with async_session_factory() as session:
+            admin_factory = admin_session_factory()
+            async with admin_factory() as session:
                 rows = (await session.execute(TENANT_LIST_QUERY)).all()
             for r in rows:
                 tenant_id = r[0]

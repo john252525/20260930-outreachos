@@ -20,6 +20,9 @@ SERVICE_NAMES = [
     "reply-classifier",
     "analytics-service",
     "experiments-service",
+    "orchestrator",
+    "auto-revision",
+    "telegram-sender",
 ]
 
 
@@ -224,4 +227,64 @@ async def data_analytics_overview(
 ) -> Any:
     proxy = request.app.state.proxy
     status, body = await proxy.get("analytics-service", "/analytics/overview", tenant_id=tenant)
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/flows")
+async def data_flows(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "orchestrator", "/flows", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/flow-steps")
+async def data_flow_steps(
+    request: Request,
+    tenant: str = Query(...),
+    flow_id: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get("orchestrator", f"/flows/{flow_id}/steps", tenant_id=tenant)
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/revisions")
+async def data_revisions(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "auto-revision", "/revisions", tenant_id=tenant, params={"limit": limit}
+    )
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/telegram-accounts")
+async def data_telegram_accounts(
+    request: Request,
+    tenant: str = Query(...),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get("telegram-sender", "/accounts", tenant_id=tenant)
+    return JSONResponse(content=body, status_code=status)
+
+
+@router.get("/data/telegram-attempts")
+async def data_telegram_attempts(
+    request: Request,
+    tenant: str = Query(...),
+    limit: int = Query(50, ge=1, le=200),
+) -> Any:
+    proxy = request.app.state.proxy
+    status, body = await proxy.get(
+        "telegram-sender", "/attempts", tenant_id=tenant, params={"limit": limit}
+    )
     return JSONResponse(content=body, status_code=status)

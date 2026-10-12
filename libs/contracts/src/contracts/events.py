@@ -95,9 +95,11 @@ class ContactsSearchStartedPayload(BaseModel):
 class ContactsFoundPayload(BaseModel):
     model_config = ConfigDict(extra="ignore")
     icp_id: UUID
-    segment_id: UUID
+    segment_id: UUID | str
     count: int = 0
     contact_ids: list[UUID] = Field(default_factory=list)
+    company_ids: list[UUID] = Field(default_factory=list)
+    search_job_id: UUID | None = None
 
 
 class ContactsEnrichedPayload(BaseModel):
@@ -245,6 +247,61 @@ class AnalyticsAlertPayload(BaseModel):
     message: str = ""
 
 
+class FlowSnapshot(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: UUID
+    type: str = ""
+    brief_id: str | None = None
+
+
+class FlowStartedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    flow: FlowSnapshot
+
+
+class FlowStepCompletedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    flow_id: UUID
+    step_name: str
+    duration_ms: int | None = None
+
+
+class FlowCompletedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    flow: FlowSnapshot
+
+
+class FlowFailedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    flow_id: UUID
+    step_name: str = ""
+    error: str = ""
+
+
+class RevisionSnapshot(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: UUID
+    template_id: str = ""
+    trigger_type: str = ""
+
+
+class RevisionProposedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    revision: RevisionSnapshot
+
+
+class RevisionApprovedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    revision_id: UUID
+    experiment_id: UUID | None = None
+
+
+class RevisionRejectedPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    revision_id: UUID
+    reason: str = ""
+
+
 class ExperimentCreatedPayload(BaseModel):
     model_config = ConfigDict(extra="ignore")
     experiment_id: UUID
@@ -305,6 +362,13 @@ EVENT_PAYLOAD_MAP: dict[str, type[BaseModel]] = {
     "reply.received": ReplyReceivedPayload,
     "reply.classified": ReplyClassifiedPayload,
     "analytics.alert": AnalyticsAlertPayload,
+    "flow.started": FlowStartedPayload,
+    "flow.step_completed": FlowStepCompletedPayload,
+    "flow.completed": FlowCompletedPayload,
+    "flow.failed": FlowFailedPayload,
+    "revision.proposed": RevisionProposedPayload,
+    "revision.approved": RevisionApprovedPayload,
+    "revision.rejected": RevisionRejectedPayload,
     "experiment.created": ExperimentCreatedPayload,
     "experiment.variant_won": ExperimentVariantWonPayload,
     "llm.called": LLMCalledPayload,

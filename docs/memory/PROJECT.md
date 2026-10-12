@@ -29,7 +29,10 @@
                        |  reply.classified
                   analytics-service    метрики (MV), funnel, reply rate, alerts
                   experiments-service  A/B (assign_variant), experiment.variant_won
-                  cost-tracker         (Спринт 5) учёт расходов
+    оркестрация   orchestrator         слушает события -> запускает следующие шаги (flows)
+    авто-ревизия  auto-revision        analytics.alert -> диагноз (LLM) -> revision -> override+эксперимент
+    каналы        sender-email (SMTP)  message.approved (email) -> message.sent
+                  telegram-sender     message.approved (telegram) -> message.sent
 
 Плюс `tenant-service` (проекты/тенанты) и `llm-gateway` (единая точка LLM) — инфраструктурные, используются всеми.
 
@@ -49,7 +52,8 @@
     libs/            common, contracts, db, nats-client, llm-client
     services/        tenant-service, llm-gateway, brief-service, contact-store, icp-service,
                      sourcing-service, composer-service, review-queue, sender-email,
-                     reply-classifier, analytics-service, experiments-service, dev-console
+                     reply-classifier, analytics-service, experiments-service,
+                     orchestrator, auto-revision, telegram-sender, dev-console
     infra/           docker-compose.dev.yml, postgres/init, nats/nats-server.conf
     scripts/         bootstrap, migrate, healthcheck, nats-cli, psql, redis-cli, logs, rebuild
     docs/            memory/, reference/, tasks/sprint-*/, architecture.md, contracts.md, infra.md

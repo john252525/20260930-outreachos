@@ -27,6 +27,7 @@ async def emit_contacts_found(
     *,
     count: int,
     company_ids: list[str],
+    contact_ids: list[str],
     trace_id: str,
 ) -> None:
     await publisher.publish(
@@ -36,7 +37,9 @@ async def emit_contacts_found(
             "icp_id": str(job.icp_id),
             "segment_id": job.segment_id,
             "count": count,
-            "contact_ids": company_ids,
+            "company_ids": company_ids,
+            "contact_ids": contact_ids,
+            "search_job_id": str(job.id),
         },
         trace_id=trace_id,
         correlation_id=job.id,

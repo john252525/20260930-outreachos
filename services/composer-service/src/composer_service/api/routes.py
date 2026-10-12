@@ -42,7 +42,7 @@ async def list_messages(
     tenant_id = get_tenant_id()
     if tenant_id is None:
         raise ValidationError("X-Tenant-ID required")
-    messages = await svc.list(
+    messages = await svc.list_messages(
         tenant_id=tenant_id,
         status=status_filter,
         contact_id=contact_id,

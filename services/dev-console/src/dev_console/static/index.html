@@ -61,6 +61,9 @@
   <button data-tab="replies">Ответы</button>
   <button data-tab="experiments">Эксперименты</button>
   <button data-tab="analytics">Аналитика</button>
+  <button data-tab="flows">Флоу</button>
+  <button data-tab="revisions">Ревизии</button>
+  <button data-tab="telegram">Telegram</button>
   <button data-tab="stoplist">Stop-list</button>
 </nav>
 <main>
@@ -93,6 +96,12 @@
   <div id="analytics" class="tab">
     <div id="analyticsOverview"></div>
     <div id="analyticsFunnel" style="margin-top:16px"></div>
+  </div>
+  <div id="flows" class="tab"><div id="flowsList"></div></div>
+  <div id="revisions" class="tab"><div id="revisionsList"></div></div>
+  <div id="telegram" class="tab">
+    <div id="telegramAccounts"></div>
+    <div id="telegramAttempts" style="margin-top:16px"></div>
   </div>
   <div id="stoplist" class="tab"><div id="stoplistList"></div></div>
 </main>
@@ -222,6 +231,19 @@ const renderers = {
     ['variants', r => (r.variants||[]).length],
     ['winner', r => (r.results||{}).winner_variant_id],
     ['created', r => dt(r.created_at)]]),
+  flows: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['type', r => r.flow_type], ['status', r => r.status],
+    ['step', r => r.current_step], ['progress', r => (r.completed_steps||0)+'/'+(r.total_steps||0)],
+    ['created', r => dt(r.created_at)]]),
+  revisions: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['trigger', r => r.trigger_type],
+    ['template', r => r.template_id], ['status', r => r.status],
+    ['conf', r => r.llm_confidence], ['exp', r => shortId(r.experiment_id)],
+    ['created', r => dt(r.created_at)]]),
+  telegram: (rows) => table(rows, [
+    ['id', r => shortId(r.id)], ['type', r => r.account_type],
+    ['user', r => r.bot_username || r.phone], ['status', r => r.status],
+    ['daily', r => r.daily_sent_today]]),
   stoplist: (rows) => table(rows, [
     ['kind', r => r.kind], ['value', r => r.value], ['reason', r => r.reason],
     ['scope', r => r.scope], ['created', r => dt(r.created_at)]]),
@@ -238,11 +260,13 @@ const TAB_TARGETS = {
   companies:'companiesList', contacts:'contactsList', briefs:'briefsList',
   messages:'messagesList', review:'reviewList', searches:'searchesList',
   icps:'icpsList', replies:'repliesList', experiments:'experimentsList',
+  flows:'flowsList', revisions:'revisionsList',
   stoplist:'stoplistList',
 };
 
 async function loadData(kind) {
   if (kind === 'analytics') { return loadAnalytics(); }
+  if (kind === 'telegram') { return loadTelegram(); }
   const target = $(TAB_TARGETS[kind]);
   if (!target) return;
   if (!state.tenant) { target.innerHTML = '<div class="muted-empty">выберите тенант вверху</div>'; return; }
@@ -275,6 +299,25 @@ async function loadAnalytics() {
     ['contacted', r => r.contacted], ['sent', r => r.sent],
     ['replied', r => r.replied], ['replied_positive', r => r.replied_positive],
     ['bounced', r => r.bounced], ['closed', r => r.closed],
+  ]);
+}
+
+async function loadTelegram() {
+  const acc = $('telegramAccounts');
+  const att = $('telegramAttempts');
+  if (!state.tenant) {
+    acc.innerHTML = '<div class="muted-empty">выберите тенант вверху</div>';
+    att.innerHTML = '';
+    return;
+  }
+  acc.innerHTML = '<div class="muted-empty">загрузка…</div>';
+  att.innerHTML = '';
+  const a = await api(`/api/data/telegram-accounts?tenant=${encodeURIComponent(state.tenant)}`);
+  const t = await api(`/api/data/telegram-attempts?tenant=${encodeURIComponent(state.tenant)}`);
+  acc.innerHTML = '<h3 style="margin:8px 0">Аккаунты</h3>' + renderers.telegram(a.body);
+  att.innerHTML = '<h3 style="margin:8px 0">Отправки</h3>' + table(t.body || [], [
+    ['id', r => shortId(r.id)], ['status', r => r.status],
+    ['to', r => r.to_handle], ['error', r => r.error], ['sent', r => dt(r.sent_at)],
   ]);
 }
 

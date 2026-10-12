@@ -72,3 +72,15 @@
 - **StatsEngine** — two-proportion z-test + Wilson CI + Bonferroni-коррекция + MDE.
 - **MDE (minimum detectable effect)** — минимальный относительный лифт, который считаем значимым.
 - **analytics.alert** — событие при низком reply rate / высоком bounce rate.
+
+## Спринт 5
+
+- **Flow / FlowStep** — цепочка автоматизации и её шаг (orchestrator).
+- **EventRouter** — диспатчер NATS-событий по handler'ам.
+- **Handler** — обработчик события (создаёт FlowStep, вызывает сервисы).
+- **RetryWorker** — переигрывает `retry_scheduled` шаги (backoff, reconciliation, parse_event).
+- **Revision** — предложение переписать шаблон (auto-revision); human approve обязателен.
+- **TemplateOverride** — data-driven промпт в composer, применяется вместо кодового шаблона.
+- **Warm-up (Telegram)** — постепенный рост лимитов (3→30/день).
+- **FloodWait** — лимит Telegram; аккаунт помечается и приостанавливается.
+- **Consent-гейт** — telegram отправляется только при `messenger_opt_in=granted` или prior reply.

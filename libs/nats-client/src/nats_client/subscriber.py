@@ -31,6 +31,7 @@ class Subscriber:
         handler: Handler,
         batch_size: int = 10,
         fetch_timeout: float = 5.0,
+        deliver_policy: DeliverPolicy = DeliverPolicy.ALL,
     ) -> None:
         self._js = js
         self._stream = stream
@@ -39,13 +40,14 @@ class Subscriber:
         self._handler = handler
         self._batch_size = batch_size
         self._fetch_timeout = fetch_timeout
+        self._deliver_policy = deliver_policy
         self._sub: Any = None
 
     async def start(self) -> None:
         config = ConsumerConfig(
             durable_name=self._durable,
             filter_subjects=self._filter,
-            deliver_policy=DeliverPolicy.ALL,
+            deliver_policy=self._deliver_policy,
             ack_wait=30,
             max_deliver=5,
         )

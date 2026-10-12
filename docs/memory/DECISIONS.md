@@ -163,3 +163,20 @@ composer (`message.drafted`) → review-queue (`message.approved`/`message.rejec
 
 **Последствия:** апдейт MV ненадолго блокирует дашборд-запросы; приемлемо для dev.
 
+## ADR-019: Orchestrator — flow-centric event-driven автоматизация
+
+**Контекст:** до Спринта 5 каждый шаг пайплайна запускался вручную. Нужен «дирижёр», который
+связывает шаги через события, отслеживает состояние цепочки и умеет ретраить упавшие шаги.
+
+**Решение:**
+- `flows` (цепочки) и `flow_steps` (шаги) — разные таблицы (разные жизненные циклы).
+- Один durable consumer на стрим BRIEFS + один на CONTACTS; `EventRouter` диспатчит по `event_type`.
+- Handler'ы сами открывают session после получения `tenant_id` из envelope (RLS).
+- `auto_*` флаги на уровне сервиса (per-tenant — Спринт 6); `auto_contacts_to_drafts=false` по умолчанию.
+- Retry: `flow_steps.next_retry_at` + exponential backoff; `RetryWorker` переигрывает handler через
+  `parse_event` (типизированный payload); 4xx — терминально, 5xx/transport — ретраится.
+- Reconciliation: повторная обработка события при существующем flow не создаёт дублей и доводит шаг.
+
+**Последствия:** пайплайн работает автономно; состояние каждой цепочки наблюдаемо (`/flows`, `/stats`,
+`/metrics`). Событийные payload'ы сохраняются в `flow_steps.input_data` для переигрывания.
+

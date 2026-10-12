@@ -317,11 +317,13 @@ class SearchOrchestrator:
                 job.progress = {**job.progress, "stage": "done"}
                 await session.flush()
 
+                all_contact_ids = [cid for i in items for cid in (i.contact_ids or [])]
                 await events.emit_contacts_found(
                     self._publisher,
                     job,
                     count=persisted_count,
                     company_ids=[str(i.company_id) for i in items if i.company_id],
+                    contact_ids=all_contact_ids,
                     trace_id=trace_id,
                 )
                 logger.info(

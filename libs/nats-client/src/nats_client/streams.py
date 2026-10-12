@@ -46,6 +46,12 @@ STREAMS: list[StreamConfig] = [
         max_bytes=256 * 1024 * 1024,
     ),
     StreamConfig(
+        name="FLOWS",
+        subjects=["flow.>", "revision.>"],
+        max_age_seconds=30 * 24 * 3600,
+        max_bytes=128 * 1024 * 1024,
+    ),
+    StreamConfig(
         name="SYSTEM",
         subjects=["system.>"],
         max_age_seconds=7 * 24 * 3600,

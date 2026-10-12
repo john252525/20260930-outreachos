@@ -199,6 +199,9 @@ services:
       REPLY_CLASSIFIER_URL: http://reply-classifier:8000
       ANALYTICS_SERVICE_URL: http://analytics-service:8000
       EXPERIMENTS_SERVICE_URL: http://experiments-service:8000
+      ORCHESTRATOR_URL: http://orchestrator:8000
+      AUTO_REVISION_URL: http://auto-revision:8000
+      TELEGRAM_SENDER_URL: http://telegram-sender:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -406,6 +409,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
       DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_ADMIN: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
       ANALYTICS_SERVICE_URL: http://analytics-service:8000
@@ -417,6 +421,105 @@ services:
       nats: {condition: service_healthy}
       redis: {condition: service_healthy}
       analytics-service: {condition: service_started}
+
+  orchestrator:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/orchestrator/Dockerfile
+    container_name: outreach-os-orchestrator
+    environment:
+      SERVICE_NAME: orchestrator
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_ADMIN: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/12
+      ICP_SERVICE_URL: http://icp-service:8000
+      SOURCING_SERVICE_URL: http://sourcing-service:8000
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      REVIEW_QUEUE_URL: http://review-queue:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      BRIEF_SERVICE_URL: http://brief-service:8000
+      SENDER_EMAIL_URL: http://sender-email:8000
+      REVISION_SERVICE_URL: http://auto-revision:8000
+      ORCH_AUTO_BRIEF_TO_ICP: ${ORCH_AUTO_BRIEF_TO_ICP:-true}
+      ORCH_AUTO_ICP_TO_SOURCING: ${ORCH_AUTO_ICP_TO_SOURCING:-true}
+      ORCH_AUTO_CONTACTS_TO_DRAFTS: ${ORCH_AUTO_CONTACTS_TO_DRAFTS:-false}
+      ORCH_AUTO_DRAFTS_TO_REVIEW: ${ORCH_AUTO_DRAFTS_TO_REVIEW:-true}
+      ORCH_AUTO_APPROVED_TO_SEND: ${ORCH_AUTO_APPROVED_TO_SEND:-true}
+      ORCH_AUTO_REVISION_ENABLED: ${ORCH_AUTO_REVISION_ENABLED:-false}
+    ports:
+      - "0.0.0.0:${ORCHESTRATOR_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      icp-service: {condition: service_started}
+      sourcing-service: {condition: service_started}
+      composer-service: {condition: service_started}
+      review-queue: {condition: service_started}
+
+  auto-revision:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/auto-revision/Dockerfile
+    container_name: outreach-os-auto-revision
+    environment:
+      SERVICE_NAME: auto-revision
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/13
+      LLM_GATEWAY_URL: http://llm-gateway:8000
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+      EXPERIMENTS_SERVICE_URL: http://experiments-service:8000
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      REVISION_LLM_MODEL: ${REVISION_LLM_MODEL:-deepseek-flash}
+      REVISION_MIN_CONFIDENCE: ${REVISION_MIN_CONFIDENCE:-0.6}
+    ports:
+      - "0.0.0.0:${REVISION_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      analytics-service: {condition: service_started}
+      experiments-service: {condition: service_started}
+      composer-service: {condition: service_started}
+
+  telegram-sender:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/telegram-sender/Dockerfile
+    container_name: outreach-os-telegram-sender
+    environment:
+      SERVICE_NAME: telegram-sender
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/14
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      TELEGRAM_ENCRYPTION_KEY: ${TELEGRAM_ENCRYPTION_KEY:?required}
+      TELEGRAM_DRY_RUN: ${TELEGRAM_DRY_RUN:-true}
+    ports:
+      - "0.0.0.0:${TELEGRAM_SENDER_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      composer-service: {condition: service_started}
 
 
 volumes:
