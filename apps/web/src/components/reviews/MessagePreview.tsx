@@ -1,4 +1,5 @@
 import { Message } from "@/lib/hooks/use-messages";
+import { MarkdownLite } from "@/components/shared/MarkdownLite";
 
 export function MessagePreview({ message }: { message: Message }) {
   return (
@@ -8,7 +9,7 @@ export function MessagePreview({ message }: { message: Message }) {
         <div><strong>Кому:</strong> {message.recipient_snapshot?.email}</div>
         <div><strong>Тема:</strong> {message.subject}</div>
       </div>
-      <div className="whitespace-pre-line text-slate-800 leading-relaxed">{message.body_text}</div>
+      <div className="text-slate-800"><MarkdownLite text={message.body_text} /></div>
     </div>
   );
 }
