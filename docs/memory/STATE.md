@@ -13,7 +13,8 @@
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
-- **Web UI (продукт):** `http://<host>:48117/` (логин из `AUTH_USERS`, пароль — см. `.env`).
+- **Web UI (продукт):** `http://<host>:48117/`. Dev-логин: `sergey@example.com` / `outreach`
+  (в `.env` хранится bcrypt-хеш в `AUTH_USERS`; пользователи — пока в env, в БД — Спринт 7).
 - Фронт-инспектор: `http://<host>:48110/` (dev-console).
 
 ## Сделано (Done)
