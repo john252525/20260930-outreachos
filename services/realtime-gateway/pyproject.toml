@@ -1,0 +1,25 @@
+[project]
+name = "realtime-gateway"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "websockets>=13.0",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "redis>=5.2",
+    "httpx>=0.27",
+    "structlog>=24.4",
+    "pyjwt>=2.9",
+    "common",
+    "contracts",
+    "nats-client",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/realtime_gateway"]

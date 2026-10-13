@@ -203,6 +203,11 @@ services:
       AUTO_REVISION_URL: http://auto-revision:8000
       TELEGRAM_SENDER_URL: http://telegram-sender:8000
       LINKEDIN_SENDER_URL: http://linkedin-sender:8000
+      USERS_URL: http://users-service:8000
+      CAMPAIGNS_URL: http://campaign-service:8000
+      WHATSAPP_URL: http://whatsapp-sender:8000
+      REALTIME_URL: http://realtime-gateway:8000
+      ML_SCORING_URL: http://ml-scoring-service:8000
     ports:
       - "0.0.0.0:${DEV_CONSOLE_PORT}:8000"
     depends_on:
@@ -665,6 +670,50 @@ services:
       nats: {condition: service_healthy}
       redis: {condition: service_healthy}
       composer-service: {condition: service_started}
+
+  realtime-gateway:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/realtime-gateway/Dockerfile
+    container_name: outreach-os-realtime-gateway
+    environment:
+      SERVICE_NAME: realtime-gateway
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/6
+      JWT_SECRET: ${JWT_SECRET:?required}
+    ports:
+      - "0.0.0.0:${REALTIME_GATEWAY_PORT}:8000"
+    depends_on:
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  ml-scoring-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/ml-scoring-service/Dockerfile
+    container_name: outreach-os-ml-scoring-service
+    environment:
+      SERVICE_NAME: ml-scoring-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/7
+      CONTACT_STORE_URL: http://contact-store:8000
+    ports:
+      - "0.0.0.0:${ML_SCORING_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
 
 
 volumes:

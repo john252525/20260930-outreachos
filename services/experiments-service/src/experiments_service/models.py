@@ -50,6 +50,10 @@ class Experiment(
     minimum_detectable_effect: Mapped[float] = mapped_column(Float, nullable=False, default=0.05)
 
     results: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    allocation_strategy: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="fixed"
+    )  # fixed | thompson
+
     decision: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

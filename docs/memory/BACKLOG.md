@@ -38,8 +38,9 @@
 - **Спринт 4:** ✅ закрыт (reply-classifier + analytics-service + experiments-service).
 - **Спринт 5:** ✅ закрыт (orchestrator + auto-revision + telegram-sender).
 - **Спринт 6:** ✅ закрыт (Web UI + LinkedIn + per-tenant settings + multi-region docs).
-- **Спринт 7 (ТЗ):** Users в БД + roles, Audit log, Campaign, WhatsApp, Realtime, bandit, ML — отдельный спринт.
+- **Спринт 7:** ✅ закрыт (7A users/audit, 7B campaign, 7C WhatsApp, 7D realtime, 7E bandit, 7F ML).
 - **7-0:** ✅ закрыт (UI «Проекты»: brief → ICP → sourcing).
+- **Спринт 8:** multi-region, SSO, custom domains, billing, GDPR export.
 - **Спринт 8:** multi-region (реализация).
 - **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
 - **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).
@@ -52,7 +53,9 @@
 - `linkedin-sender`: `linkedin-api` опционален (lazy); primary client в проде — Playwright-fallback (не реализован).
 - `require_service_token` (libs/common) не включён на сервисах (внутренние клиенты ещё не шлют токен).
 - Инвалидация кэша tenant settings — по TTL (событийная — follow-up).
-- Users в env (не БД) — до Спринта 7.
+- optimistic locking (`version`) в review_items — заявлено в ТЗ 7D.2, не реализовано (follow-up).
+- ML-обучение (LightGBM) отложено до ≥1000 labelled (сейчас baseline-скоринг).
+- transactional-email для verification/reset — не реализован (7A использует no-op reset).
 
 ## Идеи (не обязательства)
 

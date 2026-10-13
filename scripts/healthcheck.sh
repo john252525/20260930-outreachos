@@ -35,5 +35,7 @@ check "linkedin-sender" "http://127.0.0.1:${LINKEDIN_SENDER_PORT}/healthz"
 check "users-service" "http://127.0.0.1:${USERS_SERVICE_PORT}/healthz"
 check "campaign-service" "http://127.0.0.1:${CAMPAIGN_SERVICE_PORT}/healthz"
 check "whatsapp-sender" "http://127.0.0.1:${WHATSAPP_SENDER_PORT}/healthz"
+check "realtime-gateway" "http://127.0.0.1:${REALTIME_GATEWAY_PORT}/healthz"
+check "ml-scoring-service" "http://127.0.0.1:${ML_SCORING_PORT}/healthz"
 check "nats-monitor"   "http://127.0.0.1:${NATS_MONITOR_PORT}/healthz"
 [[ $FAILED -eq 0 ]] || exit 1

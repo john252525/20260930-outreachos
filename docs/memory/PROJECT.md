@@ -54,7 +54,9 @@
     services/        tenant-service, llm-gateway, brief-service, contact-store, icp-service,
                      sourcing-service, composer-service, review-queue, sender-email,
                      reply-classifier, analytics-service, experiments-service,
-                     orchestrator, auto-revision, telegram-sender, linkedin-sender, dev-console
+                     orchestrator, auto-revision, telegram-sender, linkedin-sender,
+                     users-service, campaign-service, whatsapp-sender, realtime-gateway,
+                     ml-scoring-service, dev-console
 apps/            web (Next.js UI + BFF proxy): /projects (бриф→ЦА→поиски), /reviews, /flows, /analytics, ...
     infra/           docker-compose.dev.yml, postgres/init, nats/nats-server.conf
     scripts/         bootstrap, migrate, healthcheck, nats-cli, psql, redis-cli, logs, rebuild

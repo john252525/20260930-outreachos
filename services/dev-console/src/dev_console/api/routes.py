@@ -24,6 +24,11 @@ SERVICE_NAMES = [
     "auto-revision",
     "telegram-sender",
     "linkedin-sender",
+    "users-service",
+    "campaign-service",
+    "whatsapp-sender",
+    "realtime-gateway",
+    "ml-scoring-service",
 ]
 
 

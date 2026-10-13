@@ -37,6 +37,7 @@ class ExperimentCreate(BaseModel):
     sample_size_per_variant: int = 100
     confidence_level: float = 0.95
     minimum_detectable_effect: float = 0.05
+    allocation_strategy: str = Field(default="fixed", pattern="^(fixed|thompson)$")
 
 
 class ExperimentRead(BaseModel):
@@ -57,6 +58,7 @@ class ExperimentRead(BaseModel):
     sample_size_per_variant: int
     confidence_level: float
     minimum_detectable_effect: float
+    allocation_strategy: str = "fixed"
     results: dict[str, Any]
     decision: str | None
     started_at: datetime | None

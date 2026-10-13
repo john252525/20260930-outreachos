@@ -229,3 +229,26 @@ composer (`message.drafted`) → review-queue (`message.approved`/`message.rejec
 
 **Последствия:** один tenant — auto, другой — manual, без пересборки. Кэш снимает нагрузку с tenant-service.
 
+## ADR-023: Users в БД, JWT с tenant_id+role, Argon2
+
+**Решение:** отдельный `users-service`; `users` глобальные (без RLS), `user_tenants`/`invitations` — tenant-scoped (RLS).
+Argon2 (не bcrypt), constant-time auth, brute-force lock (5 попыток → 15 мин). JWT содержит `tenant_id`+`role`
+(без обращения к БД на каждый запрос). Кросс-tenant чтение членств при логине — через admin-DSN (ADR-017).
+
+## ADR-024: Audit log в схеме `audit`, в той же транзакции
+
+**Решение:** `audit.audit_events`; `common.audit.write_audit_event`. Пишется в той же транзакции, что и
+действие (консистентность); для failed-действий (login) — отдельной. Не через middleware (шум).
+
+## ADR-025: WhatsApp — через провайдера, 24ч окно, dry-run
+
+**Решение:** провайдер-абстракция (Gupshup + dry-run), **не напрямую Meta**. Отправка только при
+`whatsapp_opt_in=granted`. Вне 24ч-окна — только pre-approved шаблоны (иначе блок). Double opt-in
+(global `WHATSAPP_ENABLED` + per-tenant `whatsapp_enabled`).
+
+## ADR-026: Multi-armed bandit — per-experiment, дефолт fixed
+
+**Решение:** Thompson Sampling в experiments (`allocation_strategy=fixed|thompson`). Фиксированный A/B —
+дефолт; bandit включается осознанно. ML-скоринг — baseline-эвристика (sigmoid), реальное обучение отложено
+до ≥1000 labelled-контактов.
+

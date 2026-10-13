@@ -9,6 +9,7 @@ import structlog
 from common.errors import ConflictError, NotFoundError, ValidationError
 from experiments_service.clients.analytics_client import AnalyticsClient
 from experiments_service.config import Settings
+from experiments_service.engine.bandit import ThompsonSampling
 from experiments_service.engine.stats_engine import StatsEngine
 from experiments_service.engine.variant_assigner import VariantAssigner
 from experiments_service.events import emit_experiment_created, emit_variant_won
@@ -67,6 +68,7 @@ class ExperimentService:
             sample_size_per_variant=data.sample_size_per_variant,
             confidence_level=data.confidence_level,
             minimum_detectable_effect=data.minimum_detectable_effect,
+            allocation_strategy=data.allocation_strategy,
             results={},
         )
         await self._repo.add(experiment)
@@ -170,12 +172,24 @@ class ExperimentService:
         if exp.status == "completed" and exp.results.get("winner_variant_id"):
             variant_id = str(exp.results["winner_variant_id"])
         elif exp.status in ("draft", "running", "paused"):
-            assigner = VariantAssigner()
-            variant_id = assigner.assign(
-                experiment_id=str(exp.id),
-                contact_id=str(contact_id),
-                variants=exp.variants or [],
-            )
+            if exp.allocation_strategy == "thompson" and exp.status == "running":
+                stats = exp.results.get("variants") or []
+                if stats:
+                    variant_id = ThompsonSampling.choose_variant(stats)
+                else:
+                    assigner = VariantAssigner()
+                    variant_id = assigner.assign(
+                        experiment_id=str(exp.id),
+                        contact_id=str(contact_id),
+                        variants=exp.variants or [],
+                    )
+            else:
+                assigner = VariantAssigner()
+                variant_id = assigner.assign(
+                    experiment_id=str(exp.id),
+                    contact_id=str(contact_id),
+                    variants=exp.variants or [],
+                )
         else:
             win = exp.results.get("winner_variant_id")
             variant_id = str(win) if win else None

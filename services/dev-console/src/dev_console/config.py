@@ -45,6 +45,11 @@ class Settings(BaseServiceSettings):
     linkedin_sender_url: str = Field(
         default="http://linkedin-sender:8000", alias="LINKEDIN_SENDER_URL"
     )
+    users_service_url: str = Field(default="http://users-service:8000", alias="USERS_URL")
+    campaign_service_url: str = Field(default="http://campaign-service:8000", alias="CAMPAIGNS_URL")
+    whatsapp_sender_url: str = Field(default="http://whatsapp-sender:8000", alias="WHATSAPP_URL")
+    realtime_gateway_url: str = Field(default="http://realtime-gateway:8000", alias="REALTIME_URL")
+    ml_scoring_url: str = Field(default="http://ml-scoring-service:8000", alias="ML_SCORING_URL")
 
     events_default_limit: int = Field(default=25, alias="CONSOLE_EVENTS_LIMIT")
 

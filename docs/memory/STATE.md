@@ -1,15 +1,15 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-13 (iter 013 — Спринт 7-0: UI «Проекты» (brief→ICP→sourcing))
+> Последнее обновление: 2026-10-13 (iter 014 — Спринт 7: users+roles+audit, campaign, WhatsApp, realtime, bandit, ML)
 
 ## TL;DR для нового агента
 
 - Платформа **Outreach OS** — мульти-тенантный outreach из API-first микросервисов.
-- **Спринты 0–6 закрыты** (0, 1, 2A-C, 3A-C, 4A-C, 5A-C, 6A-D). Система самоуправляемая
+- **Спринты 0–7 закрыты** (0, 1, 2A-C, 3A-C, 4A-C, 5A-C, 6A-D). Система самоуправляемая
   (brief → ICP → sourcing → drafts → review → send → reply → analytics → A/B → auto-revision),
   **3 канала** (email + Telegram + LinkedIn) и **Web UI** (Next.js).
-  Следующий — **Спринт 7** (WhatsApp, bandit, ML-скоринг, users+roles, audit log).
+  Следующий — **Спринт 8** (multi-region, SSO, custom domains, billing).
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
@@ -169,6 +169,24 @@
   ICP (3 сегмента) → авто-sourcing → flow `running`. Всё видно в UI.
 - **Тенанты в UI НЕ создаются** (это работа Спринта 7A `POST /auth/register`), чтобы не конфликтовать.
 
+
+### Спринт 7 — Users + Audit + Campaign + WhatsApp + Realtime + Bandit + ML ✅
+- **7A `users-service`** (48119): `users` (глобальные, без RLS), `user_tenants`/`invitations` (RLS), схема `audit`
+  (+ `audit.audit_events`). Argon2, JWT (tenant_id+role), constant-time auth, brute-force lock, register
+  (создаёт tenant+owner), login/switch-tenant/me, invite/accept, audit API. `common.audit.write_audit_event`.
+  Web UI: login через users-service (+fallback env), `/settings/users`, `/settings/audit`.
+- **7B `campaign-service`** (48120): `campaigns` (RLS), CRUD + metrics (из analytics). Web UI: `/campaigns`.
+- **7C `whatsapp-sender`** (48121): `whatsapp_accounts`/`whatsapp_templates`/`whatsapp_send_attempts` (RLS),
+  провайдер-абстракция (Gupshup + dry-run), **24ч session window** (Redis), pre-approved шаблоны,
+  double opt-in + consent, dry-run. Webhook для входящих.
+- **7D `realtime-gateway`** (48122): WebSocket + Redis pub/sub + NATS-мост (BRIEFS+FLOWS) + presence.
+  Optimistic locking — `version` в review_items (follow-up).
+- **7E Multi-armed bandit**: `ThompsonSampling` в experiments-service; `allocation_strategy=fixed|thompson`
+  (per-experiment, дефолт fixed).
+- **7F `ml-scoring-service`** (48123): `contact_features` (RLS), baseline-скоринг (sigmoid над взвешенными
+  фичами; реальное обучение отложено до ≥1000 сэмплов). API `/score`, `/features`, `/stats`.
+- **dev-console:** 21 сервис, вкладки/данные для новых сервисов.
+
 ### Dev-console ✅
 - `services/dev-console` (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы
   компаний/контактов/брифов/ICP/поисков/писем/ревью/stop-list. Проксирует API + читает JetStream (read-only).
@@ -181,8 +199,7 @@
 - (нет)
 
 ## Далее (Next)
-- **Спринт 7**: WhatsApp sender, multi-armed bandit, ML-скоринг, users+roles в БД, campaign entity, audit log.
-- **Спринт 8**: реализация multi-region (см. `docs/multi-region.md`).
+- **Спринт 8**: multi-region (реализация), SSO (SAML/OIDC), custom email domains, billing/подписки, GDPR export.
 - Позже: Telegram/WhatsApp sender (3D), LinkedIn (3E), зарубежные OSINT-источники (2D), stage/prod окружения.
 
 ## Блокеры
@@ -211,6 +228,11 @@
 | telegram-sender | 48116 | 8000 |
 | web (Next.js) | 48117 | 3000 |
 | linkedin-sender | 48118 | 8000 |
+| users-service | 48119 | 8000 |
+| campaign-service | 48120 | 8000 |
+| whatsapp-sender | 48121 | 8000 |
+| realtime-gateway | 48122 | 8000 |
+| ml-scoring-service | 48123 | 8000 |
 | dev-console | 48110 | 8000 |
 | Postgres | 48532 | 5432 |
 | NATS client | 48222 | 4222 |
