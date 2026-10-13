@@ -1,7 +1,7 @@
 # Iteration 014 — Спринт 7: Users + Audit + Campaign + WhatsApp + Realtime + Bandit + ML
 
 Дата: 2026-10-13
-Коммит: (pending)
+Коммит: 9e691d1
 
 ## Цель
 Сделать систему продуктом для команд: users в БД (роли, audit), кампании, 4-й канал (WhatsApp),
