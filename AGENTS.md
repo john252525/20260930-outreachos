@@ -20,7 +20,7 @@
 1. `docs/memory/PROJECT.md` — что за проект, пайплайн, стек, интеграции
 2. `docs/memory/STATE.md` — где мы сейчас (Done / In progress / Next / Blockers) + карта портов
 3. `docs/memory/CONVENTIONS.md` — как писать код (в т.ч. межсервисные паттерны)
-4. `docs/memory/DECISIONS.md` — принятые архитектурные решения (ADR-001..016; не предлагай отвергнутое)
+4. `docs/memory/DECISIONS.md` — принятые архитектурные решения (ADR-001..022; не предлагай отвергнутое)
 5. последние 2–3 файла из `docs/memory/iterations/`
 6. при необходимости — `docs/memory/GLOSSARY.md`, `docs/memory/BACKLOG.md`
 

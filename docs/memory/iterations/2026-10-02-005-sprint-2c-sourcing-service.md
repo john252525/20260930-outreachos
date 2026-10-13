@@ -1,7 +1,7 @@
 # Iteration 005 — Спринт 2C: sourcing-service
 
 Date: 2026-10-02
-Commit: (pending)
+Коммит: 76a55a8
 
 ## Goal
 

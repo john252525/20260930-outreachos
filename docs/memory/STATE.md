@@ -6,12 +6,14 @@
 ## TL;DR для нового агента
 
 - Платформа **Outreach OS** — мульти-тенантный outreach из API-first микросервисов.
-- **Спринты 0–6 закрыты** (0, 1, 2A/2B/2C, 3A/3B/3C, 4A/4B/4C, 5A/5B/5C). Система самоуправляемая
-  (brief → ICP → sourcing → drafts → review → send → reply → analytics → A/B → auto-revision) + 2 канала (email + Telegram).
+- **Спринты 0–6 закрыты** (0, 1, 2A-C, 3A-C, 4A-C, 5A-C, 6A-D). Система самоуправляемая
+  (brief → ICP → sourcing → drafts → review → send → reply → analytics → A/B → auto-revision),
+  **3 канала** (email + Telegram + LinkedIn) и **Web UI** (Next.js).
   Следующий — **Спринт 7** (WhatsApp, bandit, ML-скоринг, users+roles, audit log).
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
+- **Web UI (продукт):** `http://<host>:48117/` (логин из `AUTH_USERS`, пароль — см. `.env`).
 - Фронт-инспектор: `http://<host>:48110/` (dev-console).
 
 ## Сделано (Done)
@@ -215,7 +217,9 @@
 
 - **Все LLM-вызовы — только через `llm-gateway`** (`POST /v1/complete`), не напрямую в DeepSeek.
 - **Сервисы не ходят друг к другу в БД** — только HTTP + NATS.
-- **Device-режимы:** `SENDER_DRY_RUN=true` (письма не уходят реально), `SENDER_ENCRYPTION_KEY` (Fernet) обязателен.
+- **Device-режимы (dry-run):** `SENDER_DRY_RUN`, `TELEGRAM_DRY_RUN`, `LINKEDIN_DRY_RUN` — true; реально не отправляем.
+- **Секреты-ключи (Fernet):** `SENDER_ENCRYPTION_KEY`, `TELEGRAM_ENCRYPTION_KEY`, `LINKEDIN_ENCRYPTION_KEY`, `NEXTAUTH_SECRET`, `WEB_SERVICE_TOKEN`.
+- **Опальные каналы:** `LINKEDIN_ENABLED=false` (kill-switch) + per-tenant `linkedin_enabled`; Telegram/LinkedIn требуют consent/connection.
 - **Внешние ключи (dev):** DeepSeek и Langfuse заданы; Serper/Yandex/DaData/Hunter — пустые (sourcing работает
   только через `website_parser`).
 - **Тесты:** unit — без внешних зависимостей; integration (`-m integration`) требуют запущенного стека и делают

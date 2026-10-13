@@ -1,7 +1,7 @@
 # Iteration 006-008 — Спринт 3: composer + review-queue + sender-email
 
 Date: 2026-10-11
-Commit: (pending)
+Коммит: c0d7dda
 
 ## Goal
 

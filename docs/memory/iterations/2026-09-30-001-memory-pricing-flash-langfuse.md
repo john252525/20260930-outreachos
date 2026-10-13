@@ -1,7 +1,7 @@
 # Iteration 001 — Memory layer + pricing + переход на deepseek-flash + Langfuse
 
 Date: 2026-09-30
-Commit: (pending)
+Коммит: 2db977b
 
 ## Goal
 

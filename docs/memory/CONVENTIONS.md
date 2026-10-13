@@ -39,8 +39,15 @@ services/<name>/
     repository.py        # доступ к данным
     service.py           # бизнес-логика
     events.py            # публикация NATS-событий
+    clients/             # httpx-клиенты к другим сервисам
     api/                 # routes.py, deps.py
   tests/
+
+apps/web/                # Next.js UI + BFF (npm-мир, pnpm; НЕ uv)
+  src/app/               # App Router; (app)/* — защищённые, (auth)/login
+  src/app/api/proxy/     # BFF: /api/proxy/<service>/<path>
+  src/lib/               # auth (Auth.js), api-client, hooks
+  middleware.ts          # auth-guard
 ```
 
 ## Паттерны сервиса
@@ -90,3 +97,24 @@ services/<name>/
 - **Фоновые задачи:** `asyncio.create_task` + хранение ссылок в `running_tasks` (иначе GC убьёт); своя session.
 - **Идемпотентность исходящих:** `Idempotency-Key` на POST/PATCH к другим сервисам (напр. `sourcing:{job}:company:{item}`).
 - **Схемы ответов-списков** (`*Summary`) нужны `from_attributes=True`, если валидируются из ORM-объектов.
+
+## Паттерны Спринтов 4-6
+
+- **Материализованные представления (`analytics`):** схема `analytics` + MV; REFRESH — под owner-ролью
+  (`REFRESH` не сработает под RLS-ролью). См. ADR-017/018.
+- **Cross-tenant листинг** (retry worker, evaluate-loop, alert engine): owner/admin-DSN
+  (`DATABASE_URL_ADMIN`), изоляция — явным `WHERE tenant_id` (ADR-017).
+- **NATS-subscriber:** `deliver_policy` настраиваем (`NEW` для «живых» оркестраторов, `ALL` для
+  тех, кто должен видеть историю). Обработчик получает `EventEnvelope` с Pydantic-payload.
+- **Orchestrator handlers:** сами открывают session после `envelope.tenant_id`; проверяют
+  `flow.status == "running"`; идемпотентны (reconciliation при повторной обработке); 4xx — терминально,
+  5xx/transport — retry (см. `is_retryable`). `flow_steps.input_data` хранит `original_event_type`/`original_event_payload`.
+- **Per-tenant settings:** читать через `TenantClient.get_settings` (кэш Redis 300с); дефолты — в коде.
+  Флаги `auto_*` и channel-enable проверять из настроек, не из глобального env.
+- **BFF (Web UI):** браузер → только `/api/proxy/<service>/<path>` (Next.js route handler). Он
+  подставляет `X-Tenant-ID`/`X-User-Id` из серверной сессии и `Authorization: Bearer SERVICE_TOKEN`.
+  Прямые вызовы микросервисов из браузера запрещены.
+- **Service auth:** `common.auth.require_service_token` (opt-in: no-op если `SERVICE_TOKEN` не задан).
+- **Секреты каналов:** Telegram/LinkedIn — Fernet (`*_ENCRYPTION_KEY`); в БД только шифротекст.
+- **Опальные каналы (Telegram/LinkedIn):** double opt-in, consent/connection-check, warm-up, dry-run,
+  captcha/ban → ручное вмешательство, FloodWait-обработка.

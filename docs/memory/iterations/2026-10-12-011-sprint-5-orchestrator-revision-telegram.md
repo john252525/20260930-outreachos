@@ -1,7 +1,7 @@
 # Iteration 011 — Спринт 5: orchestrator + auto-revision + telegram
 
 Дата: 2026-10-12
-Коммит: (pending)
+Коммит: 824986d
 
 ## Цель
 Сделать платформу самоуправляемой (orchestrator), замкнуть обратную связь (auto-revision) и

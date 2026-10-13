@@ -1,7 +1,7 @@
 # Iteration 012 — Спринт 6: Web UI + LinkedIn + per-tenant settings + multi-region docs
 
 Дата: 2026-10-12
-Коммит: (pending)
+Коммит: 2e3a35a
 
 ## Цель
 Вывести систему за пределы «технического пользователя»: Web UI, канал LinkedIn, per-tenant settings.

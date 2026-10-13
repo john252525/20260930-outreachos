@@ -1,7 +1,7 @@
 # Iteration 004 — Спринт 2B: icp-service
 
 Date: 2026-10-01
-Commit: (pending)
+Коммит: 473357b
 
 ## Goal
 
