@@ -38,7 +38,8 @@
 - **Спринт 4:** ✅ закрыт (reply-classifier + analytics-service + experiments-service).
 - **Спринт 5:** ✅ закрыт (orchestrator + auto-revision + telegram-sender).
 - **Спринт 6:** ✅ закрыт (Web UI + LinkedIn + per-tenant settings + multi-region docs).
-- **Спринт 7:** WhatsApp (Business API), multi-armed bandit, ML-скоринг, users+roles в БД, campaign, audit log.
+- **Спринт 7 (ТЗ):** Users в БД + roles, Audit log, Campaign, WhatsApp, Realtime, bandit, ML — отдельный спринт.
+- **7-0:** ✅ закрыт (UI «Проекты»: brief → ICP → sourcing).
 - **Спринт 8:** multi-region (реализация).
 - **3D/3E:** Telegram/WhatsApp sender, LinkedIn.
 - **2D:** зарубежные OSINT-источники (Crunchbase, LinkedIn).

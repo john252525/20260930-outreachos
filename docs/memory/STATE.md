@@ -1,7 +1,7 @@
 # STATE.md — где мы сейчас
 
 > Быстрая память. Обновляется в конце каждой итерации. Единственное место, где написано «где мы».
-> Последнее обновление: 2026-10-12 (iter 012 — Спринт 6: Web UI + LinkedIn + per-tenant settings + multi-region docs)
+> Последнее обновление: 2026-10-13 (iter 013 — Спринт 7-0: UI «Проекты» (brief→ICP→sourcing))
 
 ## TL;DR для нового агента
 
@@ -13,7 +13,8 @@
 - Полный цикл работает end-to-end: Brief → ICP → Sourcing → Composer → Review → Sender (dry-run).
 - Стек: Python 3.12 / FastAPI / Postgres+RLS / NATS JetStream / Redis / uv workspaces / Docker Compose.
 - Всё поднимается через `bash scripts/bootstrap.sh`; проверка — `bash scripts/healthcheck.sh`.
-- **Web UI (продукт):** `http://<host>:48117/`. Dev-логин: `sergey@example.com` / `outreach`
+- **Web UI (продукт):** `http://<host>:48117/` — страница **«Проекты»** (создать проект → вопросы → ЦА → поиски) и остальные.
+  Dev-логин: `sergey@example.com` / `outreach`
   (в `.env` хранится bcrypt-хеш в `AUTH_USERS`; пользователи — пока в env, в БД — Спринт 7).
 - Фронт-инспектор: `http://<host>:48110/` (dev-console).
 
@@ -156,6 +157,17 @@
 - **6D Multi-region groundwork**: `docs/multi-region.md` + `docs/runbook-multi-region.md`
   (модель данных, репликация, роутинг, миграция tenant, failover). Реализация — Спринт 8.
 - **dev-console:** вкладка LinkedIn; BFF-совместимые data-эндпоинты для settings/telegram/linkedin.
+
+
+### Спринт 7-0 — UI «Проекты» (brief → ICP → sourcing) ✅
+- **Проект = бриф** (не тенант). У тенанта много проектов-брифов; тенант = «компания/аккаунт» (отправители, настройки, RLS).
+- **Web UI:** `/projects` (список брифов + диалог «Новый проект»), `/projects/[id]` (вводные,
+  уточняющие вопросы→ответы, «Завершить бриф», блок **ЦА/ICP + сегменты**, блок **Поиски**, прогресс-степпер).
+  Пункт навигации «Проекты» (иконка FolderKanban).
+- Поверх готовых API через BFF-прокси (`briefs`, `icps`, `sourcing` уже были замаплены).
+- **E2E через UI:** создать проект → LLM задаёт вопросы → ответы → complete → orchestrator авто-генерирует
+  ICP (3 сегмента) → авто-sourcing → flow `running`. Всё видно в UI.
+- **Тенанты в UI НЕ создаются** (это работа Спринта 7A `POST /auth/register`), чтобы не конфликтовать.
 
 ### Dev-console ✅
 - `services/dev-console` (порт 48110): здоровье сервисов, тенанты, события NATS, таблицы

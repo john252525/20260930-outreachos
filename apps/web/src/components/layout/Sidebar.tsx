@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, GitBranch, CheckSquare, Send, BarChart3,
-  FlaskConical, Wand2, Settings,
+  FlaskConical, Wand2, Settings, FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/projects", label: "Проекты", icon: FolderKanban },
   { href: "/flows", label: "Flows", icon: GitBranch },
   { href: "/reviews", label: "Reviews", icon: CheckSquare },
   { href: "/messages", label: "Messages", icon: Send },

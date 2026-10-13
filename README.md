@@ -12,7 +12,7 @@
 
 ## Статус
 
-**Спринты 0–6 закрыты.** Платформа — самоуправляемый продукт с Web UI:
+**Спринты 0–6 + UI «Проекты» (7-0) закрыты.** Платформа — самоуправляемый продукт с Web UI:
 Brief → ICP → Sourcing → Composer → Review → Sender (email + Telegram + LinkedIn, dry-run) →
 Reply-classifier → Analytics → A/B → auto-revision. Orchestrator связывает шаги; per-tenant settings.
 Следующий — Спринт 7 (WhatsApp, bandit, ML-скоринг, users+roles, audit log).

@@ -94,3 +94,8 @@
 - **Connection check** — LinkedIn-сообщение только при принятом connection request.
 - **Captcha → ручное решение** — аккаунт `captcha_required`, `/solve-captcha`.
 - **home_region** — регион хранения данных tenant'а (multi-region groundwork).
+
+## Спринт 7-0
+
+- **Проект** = бриф (одна инициатива внутри тенанта). Тенант = компания/аккаунт (отправители, настройки, RLS).
+- Страницы UI: `/projects` (список), `/projects/[id]` (вводные, вопросы→ответы, ЦА, поиски).
