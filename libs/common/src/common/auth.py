@@ -20,7 +20,9 @@ async def require_service_token(authorization: str | None = Header(None)) -> Non
             detail="SERVICE_TOKEN not configured",
         )
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing service token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing service token"
+        )
     token = authorization.removeprefix("Bearer ")
     if token != expected:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid service token")

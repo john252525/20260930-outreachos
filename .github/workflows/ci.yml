@@ -28,7 +28,7 @@ jobs:
     if: github.event_name == 'push'
     strategy:
       matrix:
-        service: [tenant-service, llm-gateway, brief-service, contact-store, icp-service, sourcing-service, composer-service, review-queue, sender-email, dev-console, reply-classifier, analytics-service, experiments-service, orchestrator, auto-revision, telegram-sender, linkedin-sender]
+        service: [tenant-service, llm-gateway, brief-service, contact-store, icp-service, sourcing-service, composer-service, review-queue, sender-email, dev-console, reply-classifier, analytics-service, experiments-service, orchestrator, auto-revision, telegram-sender, linkedin-sender, users-service, campaign-service, whatsapp-sender]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

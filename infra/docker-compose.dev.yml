@@ -549,6 +549,8 @@ services:
       SOURCING_URL: http://sourcing-service:8000
       CONTACT_STORE_URL: http://contact-store:8000
       TENANT_URL: http://tenant-service:8000
+      USERS_SERVICE_URL: http://users-service:8000
+      CAMPAIGN_SERVICE_URL: http://campaign-service:8000
     ports:
       - "0.0.0.0:${WEB_PORT}:3000"
     depends_on:
@@ -579,6 +581,85 @@ services:
       LINKEDIN_ENABLED: ${LINKEDIN_ENABLED:-false}
     ports:
       - "0.0.0.0:${LINKEDIN_SENDER_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      composer-service: {condition: service_started}
+
+  users-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/users-service/Dockerfile
+    container_name: outreach-os-users-service
+    environment:
+      SERVICE_NAME: users-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_ADMIN: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/14
+      TENANT_SERVICE_URL: http://tenant-service:8000
+      JWT_SECRET: ${JWT_SECRET:?required}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-10080}
+    ports:
+      - "0.0.0.0:${USERS_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      tenant-service: {condition: service_started}
+
+  campaign-service:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/campaign-service/Dockerfile
+    container_name: outreach-os-campaign-service
+    environment:
+      SERVICE_NAME: campaign-service
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/4
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+    ports:
+      - "0.0.0.0:${CAMPAIGN_SERVICE_PORT}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  whatsapp-sender:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: services/whatsapp-sender/Dockerfile
+    container_name: outreach-os-whatsapp-sender
+    environment:
+      SERVICE_NAME: whatsapp-sender
+      SERVICE_PORT: "8000"
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_MIGRATION: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NATS_URL: nats://${NATS_USER}:${NATS_PASSWORD}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/5
+      COMPOSER_SERVICE_URL: http://composer-service:8000
+      CONTACT_STORE_URL: http://contact-store:8000
+      TENANT_SERVICE_URL: http://tenant-service:8000
+      WHATSAPP_ENCRYPTION_KEY: ${WHATSAPP_ENCRYPTION_KEY:?required}
+      WHATSAPP_DRY_RUN: ${WHATSAPP_DRY_RUN:-true}
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-false}
+    ports:
+      - "0.0.0.0:${WHATSAPP_SENDER_PORT}:8000"
     depends_on:
       postgres: {condition: service_healthy}
       nats: {condition: service_healthy}

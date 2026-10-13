@@ -14,6 +14,8 @@ const SERVICE_ROUTES: Record<string, string | undefined> = {
   contacts: process.env.CONTACT_STORE_URL,
   companies: process.env.CONTACT_STORE_URL,
   tenants: process.env.TENANT_URL,
+  users: process.env.USERS_SERVICE_URL,
+  campaigns: process.env.CAMPAIGN_SERVICE_URL,
 };
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
@@ -37,7 +39,10 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
   headers.set("X-Tenant-ID", session.user.tenantId);
   headers.set("X-User-Id", session.user.id);
   headers.set("X-Trace-Id", crypto.randomUUID());
-  if (process.env.SERVICE_TOKEN) {
+  const userToken = (session as { accessToken?: string }).accessToken;
+  if (userToken) {
+    headers.set("Authorization", `Bearer ${userToken}`);
+  } else if (process.env.SERVICE_TOKEN) {
     headers.set("Authorization", `Bearer ${process.env.SERVICE_TOKEN}`);
   }
   headers.set("Content-Type", req.headers.get("Content-Type") || "application/json");

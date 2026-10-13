@@ -32,5 +32,8 @@ check "orchestrator" "http://127.0.0.1:${ORCHESTRATOR_PORT}/healthz"
 check "auto-revision" "http://127.0.0.1:${REVISION_SERVICE_PORT}/healthz"
 check "telegram-sender" "http://127.0.0.1:${TELEGRAM_SENDER_PORT}/healthz"
 check "linkedin-sender" "http://127.0.0.1:${LINKEDIN_SENDER_PORT}/healthz"
+check "users-service" "http://127.0.0.1:${USERS_SERVICE_PORT}/healthz"
+check "campaign-service" "http://127.0.0.1:${CAMPAIGN_SERVICE_PORT}/healthz"
+check "whatsapp-sender" "http://127.0.0.1:${WHATSAPP_SENDER_PORT}/healthz"
 check "nats-monitor"   "http://127.0.0.1:${NATS_MONITOR_PORT}/healthz"
 [[ $FAILED -eq 0 ]] || exit 1

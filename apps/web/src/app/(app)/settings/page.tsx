@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
@@ -62,6 +63,14 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold">Settings</h1>
+      <div className="flex gap-3">
+        <Link href="/settings/users" className="text-sm text-blue-600 hover:underline">
+          Пользователи и роли →
+        </Link>
+        <Link href="/settings/audit" className="text-sm text-blue-600 hover:underline">
+          Журнал действий →
+        </Link>
+      </div>
       <div className="bg-white border rounded-lg p-6 space-y-3">
         {BOOL_FIELDS.map(([key, label]) => (
           <label key={key} className="flex items-center gap-3 text-sm">
